@@ -96,3 +96,24 @@ export interface AnnouncementItem {
   target: 'all' | 'students_27' | 'usthads';
   createdAt: string;
 }
+
+export interface ClassMessage {
+  id: string;
+  studentAdNo: string;
+  studentName: string;
+  studentHouse?: string;
+  message: string;
+  createdAt: string;
+  status: 'unread' | 'read';
+  reply?: string;
+  replyAt?: string;
+}
+
+export interface StudentCredential {
+  adNo: string;
+  studentName: string;
+  password: string;
+  previousPassword?: string;
+  updatedAt: string;
+}
+
