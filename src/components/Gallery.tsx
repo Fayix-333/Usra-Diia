@@ -1,0 +1,242 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Maximize2, X, Image as ImageIcon, Film, Palette, Zap } from 'lucide-react';
+import { GalleryItem } from '../types';
+
+const galleryItems: GalleryItem[] = [
+  {
+    id: 'gal-1',
+    title: 'The Electric Prism Project',
+    category: 'Photography',
+    imageUrl: 'https://cdn.britannica.com/54/187354-050-BE0530AF/Facebook-Founder-CEO-Mark-Zuckerberg-email-messaging-system-St-Regis.jpg'
+  },
+  {
+    id: 'gal-2',
+    title: 'Futuristic Union Identity Board',
+    category: 'Design',
+    imageUrl: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: 'gal-3',
+    title: 'Starlight Concert Aftermovie Frame',
+    category: 'Cinema',
+    imageUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: 'gal-4',
+    title: 'The Vanguard Editorial Series',
+    category: 'Photography',
+    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: 'gal-5',
+    title: 'Union Elections Live Campaign',
+    category: 'Events',
+    imageUrl: 'https://i.ibb.co/gLvhGmyH/1c82e0e3-1266-4813-867c-c95dca5a4470.png'
+  },
+  {
+    id: 'gal-6',
+    title: 'Abstract Organic Brand Poster',
+    category: 'Design',
+    imageUrl: 'https://images.unsplash.com/photo-1561070791-26c113006238?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: 'gal-7',
+    title: 'Cinematography Field Rig Capture',
+    category: 'Cinema',
+    imageUrl: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: 'gal-8',
+    title: 'Ignite Winter Fest Main Stage',
+    category: 'Events',
+    imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&q=80&w=800'
+  }
+];
+
+const categories = ['All', 'Photography', 'Design', 'Cinema', 'Events'];
+
+export default function Gallery() {
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+
+  const filteredItems = activeCategory === 'All'
+    ? galleryItems
+    : galleryItems.filter(item => item.category === activeCategory);
+
+  const getCategoryIcon = (cat: string) => {
+    switch (cat) {
+      case 'Photography': return <ImageIcon className="w-3.5 h-3.5" />;
+      case 'Cinema': return <Film className="w-3.5 h-3.5" />;
+      case 'Design': return <Palette className="w-3.5 h-3.5" />;
+      default: return <Zap className="w-3.5 h-3.5" />;
+    }
+  };
+
+  return (
+    <section id="gallery" className="relative py-28 bg-[#030303] overflow-hidden">
+      {/* Background neon elements */}
+      <div className="absolute top-1/4 right-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute bottom-1/4 left-0 w-[400px] h-[400px] bg-cyan-500/5 rounded-full blur-[130px] pointer-events-none" />
+
+      <div className="container mx-auto px-6 relative z-10 max-w-6xl">
+        
+        {/* Section Heading */}
+        <div className="text-center mb-16">
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-blue-500 font-bold mb-3">Portfolio Showpiece</p>
+          <h2 className="font-display font-black text-4xl md:text-6xl text-white tracking-tight">The Creative Vault</h2>
+          <div className="h-1 bg-gradient-to-r from-blue-600 to-cyan-400 w-20 mx-auto mt-6 rounded-full" />
+        </div>
+
+        {/* Filter Capsule Group */}
+        <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3 mb-16">
+          {categories.map((cat) => {
+            const isActive = activeCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`relative px-5 py-2.5 rounded-full text-xs font-semibold tracking-wider uppercase transition-all duration-300 border ${
+                  isActive
+                    ? 'text-white border-transparent'
+                    : 'text-neutral-400 border-white/5 bg-white/[0.02] hover:text-white hover:border-white/10'
+                }`}
+              >
+                {isActive && (
+                  <motion.span
+                    layoutId="activeCategoryBg"
+                    className="absolute inset-0 bg-blue-500/15 border border-blue-500/25 rounded-full"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <span className="flex items-center gap-1.5 relative z-10">
+                  {cat !== 'All' && getCategoryIcon(cat)}
+                  {cat}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Masonry-Style Grid */}
+        <motion.div 
+          layout 
+          className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6 [column-fill:balance]"
+        >
+          <AnimatePresence mode="popLayout">
+            {filteredItems.map((item, index) => (
+              <motion.div
+                key={item.id}
+                layout
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                whileHover={{ y: -6, scale: 1.015 }}
+                whileTap={{ scale: 0.985 }}
+                transition={{ 
+                  type: 'spring',
+                  stiffness: 260,
+                  damping: 24,
+                  mass: 0.7,
+                  delay: index * 0.03
+                }}
+                className="break-inside-avoid relative rounded-3xl overflow-hidden border border-white/5 bg-neutral-950/40 group cursor-pointer"
+                onClick={() => setSelectedItem(item)}
+              >
+                {/* Image */}
+                <img
+                  src={item.imageUrl}
+                  alt={item.title}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+
+                {/* Dark Vignette Overlay on Base */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-80" />
+
+                {/* Glassmorphism Slide-up Info Panel */}
+                <div className="absolute inset-0 flex flex-col justify-end p-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="glass-panel p-5 rounded-2xl border-white/10 relative overflow-hidden shadow-2xl translate-y-2 group-hover:translate-y-0 transition-transform duration-500 ease-out">
+                    
+                    {/* Top glass reflection light streak */}
+                    <div className="absolute top-0 inset-x-0 h-8 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-mono font-bold uppercase tracking-widest text-blue-400 bg-blue-400/10 border border-blue-400/20">
+                        {getCategoryIcon(item.category)}
+                        {item.category}
+                      </span>
+                      <Maximize2 className="w-3.5 h-3.5 text-neutral-400" />
+                    </div>
+
+                    <h3 className="font-display font-bold text-sm text-white tracking-wide">
+                      {item.title}
+                    </h3>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Lightbox Modal (Apple Cinematic Experience) */}
+        <AnimatePresence>
+          {selectedItem && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl"
+              onClick={() => setSelectedItem(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.93, opacity: 0, filter: 'blur(10px)' }}
+                animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
+                exit={{ scale: 0.93, opacity: 0, filter: 'blur(10px)' }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="relative max-w-4xl w-full rounded-3xl overflow-hidden border border-white/10 bg-neutral-950 shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Lightbox Image */}
+                <div className="relative aspect-video max-h-[70vh] bg-black flex items-center justify-center overflow-hidden">
+                  <img
+                    src={selectedItem.imageUrl}
+                    alt={selectedItem.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-contain"
+                  />
+                  {/* Subtle radial center highlight */}
+                  <div className="absolute inset-0 bg-radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.6)_100%) pointer-events-none" />
+                </div>
+
+                {/* Lightbox Glass Info Strip */}
+                <div className="glass-panel p-6 border-t border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative">
+                  {/* Top gloss */}
+                  <div className="absolute top-0 inset-x-0 h-4 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-mono font-bold uppercase tracking-widest text-blue-400 bg-blue-400/10 border border-blue-400/20 mb-2">
+                      {getCategoryIcon(selectedItem.category)}
+                      {selectedItem.category}
+                    </span>
+                    <h3 className="font-display font-extrabold text-xl text-white tracking-wide">
+                      {selectedItem.title}
+                    </h3>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedItem(null)}
+                    className="self-start sm:self-center p-3 rounded-full bg-white/5 border border-white/10 text-neutral-400 hover:text-white hover:border-white/20 transition-all duration-200"
+                    aria-label="Close lightbox"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </section>
+  );
+}

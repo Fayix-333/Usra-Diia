@@ -1,0 +1,88 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile for students and usthads",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique user ID" },
+        "username": { "type": "string", "description": "User login identifier or admission number" },
+        "name": { "type": "string", "description": "Display name of the user" },
+        "role": {
+          "type": "string",
+          "enum": ["student_27", "usthad_fsl", "student_general", "usthad_general"],
+          "description": "User authorization tier"
+        },
+        "adNo": { "type": "string", "description": "Admission number for students" },
+        "email": { "type": "string", "description": "Optional contact email" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      },
+      "required": ["id", "username", "role", "name", "createdAt"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Official announcements and directives posted by Usthad or Student Union",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Announcement ID" },
+        "title": { "type": "string", "description": "Heading of announcement" },
+        "content": { "type": "string", "description": "Body message of notice" },
+        "authorName": { "type": "string", "description": "Author display name" },
+        "authorRole": { "type": "string", "description": "Author role" },
+        "priority": { "type": "string", "enum": ["normal", "urgent", "info"], "description": "Notice priority" },
+        "target": { "type": "string", "enum": ["all", "students_27", "usthads"], "description": "Target audience" },
+        "createdAt": { "type": "string", "description": "Posting ISO timestamp" }
+      },
+      "required": ["id", "title", "content", "authorName", "authorRole", "createdAt"]
+    },
+    "StudentRecord": {
+      "title": "StudentRecord",
+      "description": "Profile and activity records for the 27 students",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Document ID matching student admission number" },
+        "adNo": { "type": "string", "description": "Admission number" },
+        "name": { "type": "string", "description": "Student full name" },
+        "batch": { "type": "string", "description": "Class batch name" },
+        "role": { "type": "string", "description": "Designation or class status" },
+        "attendance": { "type": "string", "description": "Attendance status" },
+        "activityNotes": { "type": "string", "description": "Notes on union or academic activity" },
+        "updatedAt": { "type": "string", "description": "Last updated timestamp" }
+      },
+      "required": ["id", "adNo", "name", "batch"]
+    },
+    "Inquiry": {
+      "title": "Inquiry",
+      "description": "Messages sent directly to usradiia9@gmail.com",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Inquiry ID" },
+        "name": { "type": "string", "description": "Sender name" },
+        "email": { "type": "string", "description": "Sender email" },
+        "subject": { "type": "string", "description": "Subject" },
+        "message": { "type": "string", "description": "Message content" },
+        "targetEmail": { "type": "string", "description": "Destination recipient: usradiia9@gmail.com" },
+        "createdAt": { "type": "string", "description": "Submission timestamp" }
+      },
+      "required": ["id", "name", "email", "message", "targetEmail", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Public user profile and authorization level"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Broadcast board for usthad and student union notices"
+    },
+    "/studentRecords/{adNo}": {
+      "schema": "StudentRecord",
+      "description": "Class batch records for the 27 students"
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": "Inquiry",
+      "description": "Incoming messages routed directly to usradiia9@gmail.com"
+    }
+  }
+}
