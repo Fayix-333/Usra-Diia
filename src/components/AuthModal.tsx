@@ -195,7 +195,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               }`}
             >
               <Shield className="w-4 h-4 text-amber-400" />
-              <span className="truncate">Usthad Login</span>
+              <span className="truncate">Class Teacher Login</span>
             </button>
 
             <button
@@ -232,17 +232,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             {/* TAB 1: 27 STUDENTS LOGIN */}
             {activeTab === 'students27' && (
               <form onSubmit={handleStudentSubmit} className="space-y-4">
-                <div className="p-3.5 rounded-2xl bg-blue-500/5 border border-blue-500/15 mb-4">
-                  <div className="flex items-center gap-2 text-blue-400 font-mono text-[11px] font-semibold mb-1">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>27-Student Cohort Credentials</span>
-                  </div>
-                  <p className="text-neutral-400 text-xs leading-relaxed">
-                    Username: <span className="text-white font-mono">Admission Number (e.g. 297, 325, 333, 487)</span><br />
-                    Password: <span className="text-white font-mono">Admission Number</span> (same as username).
-                  </p>
-                </div>
-
                 <div className="space-y-2">
                   <label className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 block">
                     Admission Number (Username)
@@ -251,52 +240,24 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     type="text"
                     required
                     value={studentAdNo}
-                    onChange={(e) => {
-                      setStudentAdNo(e.target.value);
-                      if (!studentPass) setStudentPass(e.target.value);
-                    }}
-                    placeholder="e.g. 333"
+                    onChange={(e) => setStudentAdNo(e.target.value)}
+                    placeholder="Enter admission number"
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-blue-500/50"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <label className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 block">
-                    Password (Admission Number)
+                    Password
                   </label>
                   <input
                     type="password"
                     required
                     value={studentPass}
                     onChange={(e) => setStudentPass(e.target.value)}
-                    placeholder="Same as your admission number (e.g. 333)"
+                    placeholder="Enter password"
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-blue-500/50"
                   />
-                </div>
-
-                {/* Quick test picker */}
-                <div className="pt-2">
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-neutral-500 block mb-2">
-                    Quick Sample Students (Click to auto-fill):
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {['333 (Fayiz)', '328 (Hanan)', '297 (Shadi)', '338 (Thoyyib)', '342 (Noufan)', '487 (Swalahudheen)'].map((s) => {
-                      const ad = s.split(' ')[0];
-                      return (
-                        <button
-                          key={ad}
-                          type="button"
-                          onClick={() => {
-                            setStudentAdNo(ad);
-                            setStudentPass(ad);
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-blue-500/10 border border-white/5 hover:border-blue-500/20 text-[10px] font-mono text-neutral-300 hover:text-blue-300 transition-colors cursor-pointer"
-                        >
-                          {s}
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
 
                 <button
@@ -304,71 +265,49 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   disabled={isLoading}
                   className="w-full mt-4 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-mono text-xs font-bold uppercase tracking-wider shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  <span>Enter 27-Student Portal</span>
+                  <span>Sign In</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
             )}
 
-            {/* TAB 2: USTHAD LOGIN */}
+            {/* TAB 2: CLASS TEACHER LOGIN */}
             {activeTab === 'usthad' && (
               <form onSubmit={handleUsthadSubmit} className="space-y-4">
-                <div className="p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/20 mb-4">
-                  <div className="flex items-center gap-2 text-amber-400 font-mono text-[11px] font-semibold mb-1">
-                    <Shield className="w-3.5 h-3.5" />
-                    <span>Usthad Fazlu Rehman Hudawi • Faculty Credentials</span>
-                  </div>
-                  <p className="text-neutral-400 text-xs leading-relaxed">
-                    Username: <span className="text-white font-mono font-bold">fsl</span><br />
-                    Password: <span className="text-white font-mono font-bold">fsl</span>
-                  </p>
-                </div>
-
                 <div className="space-y-2">
                   <label className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 block">
-                    Usthad Username
+                    Username
                   </label>
                   <input
                     type="text"
                     required
                     value={usthadUser}
                     onChange={(e) => setUsthadUser(e.target.value)}
-                    placeholder="Enter 'fsl'"
+                    placeholder="Enter username"
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-amber-500/50"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <label className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 block">
-                    Usthad Password
+                    Password
                   </label>
                   <input
                     type="password"
                     required
                     value={usthadPass}
                     onChange={(e) => setUsthadPass(e.target.value)}
-                    placeholder="Enter 'fsl'"
+                    placeholder="Enter password"
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-amber-500/50"
                   />
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUsthadUser('fsl');
-                    setUsthadPass('fsl');
-                  }}
-                  className="w-full py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 font-mono text-[11px] hover:bg-amber-500/20 transition-colors"
-                >
-                  Auto-fill Usthad credentials (fsl / fsl)
-                </button>
 
                 <button
                   type="submit"
                   disabled={isLoading}
                   className="w-full mt-4 py-3.5 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-white font-mono text-xs font-bold uppercase tracking-wider shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  <span>Enter Usthad Command Center</span>
+                  <span>Sign In as Class Teacher</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
