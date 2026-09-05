@@ -227,7 +227,7 @@ export default function Navbar({ activeSection, setActiveSection, onOpenAuth, on
                 >
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span>
-                    Open {currentUser.role === 'usthad_fsl' ? 'Usthad Portal' : currentUser.role === 'student_27' ? `Student Portal (${currentUser.adNo})` : 'Campus Portal'}
+                    Open {currentUser.role === 'usthad_fsl' ? 'Class Teacher Portal' : currentUser.role === 'student_27' ? `Student Portal (${currentUser.adNo})` : 'Campus Portal'}
                   </span>
                 </motion.button>
               ) : (
