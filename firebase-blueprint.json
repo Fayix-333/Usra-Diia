@@ -65,6 +65,36 @@
         "createdAt": { "type": "string", "description": "Submission timestamp" }
       },
       "required": ["id", "name", "email", "message", "targetEmail", "createdAt"]
+    },
+    "StudentCredential": {
+      "title": "StudentCredential",
+      "description": "Secure student passwords and credentials visible only to admin via Firebase console",
+      "type": "object",
+      "properties": {
+        "adNo": { "type": "string", "description": "Admission number of the student" },
+        "studentName": { "type": "string", "description": "Full name of the student" },
+        "password": { "type": "string", "description": "Current active password" },
+        "previousPassword": { "type": "string", "description": "Previous password if changed" },
+        "updatedAt": { "type": "string", "description": "Timestamp of password update" }
+      },
+      "required": ["adNo", "studentName", "password", "updatedAt"]
+    },
+    "ClassMessage": {
+      "title": "ClassMessage",
+      "description": "Direct private messages from 27-cohort students to their Class Teacher",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Message ID" },
+        "studentAdNo": { "type": "string", "description": "Admission number of sender student" },
+        "studentName": { "type": "string", "description": "Name of student" },
+        "studentHouse": { "type": "string", "description": "House/department of student" },
+        "message": { "type": "string", "description": "Private message text to class teacher" },
+        "status": { "type": "string", "enum": ["unread", "read"], "description": "Message status" },
+        "reply": { "type": "string", "description": "Optional response from Class Teacher" },
+        "replyAt": { "type": "string", "description": "Timestamp of reply" },
+        "createdAt": { "type": "string", "description": "Timestamp of submission" }
+      },
+      "required": ["id", "studentAdNo", "studentName", "message", "createdAt"]
     }
   },
   "firestore": {
@@ -83,6 +113,14 @@
     "/inquiries/{inquiryId}": {
       "schema": "Inquiry",
       "description": "Incoming messages routed directly to usradiia9@gmail.com"
+    },
+    "/studentCredentials/{adNo}": {
+      "schema": "StudentCredential",
+      "description": "Student passwords database editable by students and visible to admin via Firebase console"
+    },
+    "/classMessages/{messageId}": {
+      "schema": "ClassMessage",
+      "description": "Direct communication channel between 27 students and Class Teacher"
     }
   }
 }
