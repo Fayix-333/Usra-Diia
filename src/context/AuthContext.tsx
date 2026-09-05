@@ -21,29 +21,6 @@ interface AuthContextType {
   students27List: Student27[];
 }
 
-const DEFAULT_ANNOUNCEMENTS: AnnouncementItem[] = [
-  {
-    id: 'ann-1',
-    title: 'Urgent: Submission of Union Media Portfolios',
-    content: 'All 27 cohort members are directed to submit their media portfolio documentation to the academic council before Friday evening.',
-    authorName: 'Usthad Fazlu Rehman Hudawi',
-    authorRole: 'Chief Mentor & Faculty Supervisor',
-    priority: 'urgent',
-    target: 'students_27',
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
-  },
-  {
-    id: 'ann-2',
-    title: 'Welcome to USRA Central Digital Portal',
-    content: 'The centralized union portal is now active for all Darul Irfan students, Usthad council members, and the 27 student cohort.',
-    authorName: 'Usthad Fazlu Rehman Hudawi',
-    authorRole: 'Faculty In-Charge',
-    priority: 'info',
-    target: 'all',
-    createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
-  }
-];
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -57,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>(DEFAULT_ANNOUNCEMENTS);
+  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
 
   // Load announcements from Firestore
   useEffect(() => {
@@ -66,14 +43,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
         const snap = await getDocs(q);
         if (!snap.empty) {
-          const list: AnnouncementItem[] = snap.docs.map(d => ({
-            id: d.id,
-            ...(d.data() as Omit<AnnouncementItem, 'id'>)
-          }));
+          const list: AnnouncementItem[] = snap.docs
+            .map(d => ({
+              id: d.id,
+              ...(d.data() as Omit<AnnouncementItem, 'id'>)
+            }))
+            .filter(a => 
+              a.id !== 'ann-1' && 
+              a.id !== 'ann-2' && 
+              !a.title?.toLowerCase().includes('urgent: submission of union media portfolios') &&
+              !a.title?.toLowerCase().includes('welcome to usra central digital portal')
+            );
           setAnnouncements(list);
+        } else {
+          setAnnouncements([]);
         }
       } catch (err) {
-        console.log('[Firestore] Using fallback announcements:', err);
+        console.log('[Firestore] Announcements query note:', err);
+        setAnnouncements([]);
       }
     }
     loadAnnouncements();
