@@ -84,6 +84,7 @@ export interface Student27 {
   house: string;
   attendance: number;
   roleTitle?: string;
+  zehnuthPoints?: number;
 }
 
 export interface AnnouncementItem {
