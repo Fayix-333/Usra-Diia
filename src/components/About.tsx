@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Target, Compass, Award, Search, Users, X } from 'lucide-react';
+import { Shield, Target, Compass, Award, Search, Users, X, MapPin, CheckCircle2, Sparkles } from 'lucide-react';
 import { TimelineItem } from '../types';
 
 const timelineData: TimelineItem[] = [
@@ -52,39 +52,66 @@ const timelineData: TimelineItem[] = [
 
 interface StudentMember {
   id: string;
-  name: string;
+  rollNo: number;
+  adNo: string;
   admissionNo: string;
+  name: string;
+  status: string;
+  house: string;
+  attendance: number;
+  roleTitle: string;
   imageUrl?: string;
 }
 
+const STUDENT_IMAGES: Record<string, string> = {
+  '325': 'https://images.unsplash.com/photo-1783659959902-eeda703b48fc?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '328': 'https://images.unsplash.com/photo-1783651375211-7a7527b4b2f0?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '330': 'https://images.unsplash.com/photo-1783656348207-3f95dfc02382?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '332': 'https://images.unsplash.com/photo-1783656348061-d2d1fcb8c364?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '333': 'https://images.unsplash.com/photo-1783655938800-a20974656824?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '337': 'https://images.unsplash.com/photo-1783656386136-8188e5289973?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '338': 'https://images.unsplash.com/photo-1783659998320-6f721f9b5d98?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '339': 'https://images.unsplash.com/photo-1783656368832-0ecf5652e4ad?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '341': 'https://images.unsplash.com/photo-1783659973465-19c07861a62f?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '342': 'https://images.unsplash.com/photo-1783651375248-806790718442?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '345': 'https://images.unsplash.com/photo-1783659666901-c9364ab9ed0a?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '347': 'https://images.unsplash.com/photo-1783651312010-5587aa521a8e?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '350': 'https://images.unsplash.com/photo-1783659998293-658661dc1d14?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '352': 'https://images.unsplash.com/photo-1783656386141-a497474796fa?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '356': 'https://images.unsplash.com/photo-1783659973415-7e659f70a495?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '357': 'https://images.unsplash.com/photo-1783659973468-ac47d8f8e667?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '375': 'https://images.unsplash.com/photo-1783659973118-a5066496de6a?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  '487': 'https://images.unsplash.com/photo-1783656368854-5b8633d691e5?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+};
+
 const students: StudentMember[] = [
-  { id: 'm-1', name: 'Sinan.P', admissionNo: '325', imageUrl: 'https://images.unsplash.com/photo-1783659959902-eeda703b48fc?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-2', name: 'Asad', admissionNo: '326' },
-  { id: 'm-3', name: 'Hanan', admissionNo: '328', imageUrl: 'https://images.unsplash.com/photo-1783651375211-7a7527b4b2f0?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-4', name: 'Hamdan', admissionNo: '329' },
-  { id: 'm-5', name: 'Ajsal', admissionNo: '330', imageUrl: 'https://images.unsplash.com/photo-1783656348207-3f95dfc02382?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-6', name: 'Afnan.T', admissionNo: '332', imageUrl: 'https://images.unsplash.com/photo-1783656348061-d2d1fcb8c364?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-7', name: 'Fayiz', admissionNo: '333', imageUrl: 'https://images.unsplash.com/photo-1783655938800-a20974656824?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-8', name: 'Raheem', admissionNo: '336' },
-  { id: 'm-9', name: 'Farhan', admissionNo: '337', imageUrl: 'https://images.unsplash.com/photo-1783656386136-8188e5289973?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-10', name: 'Thoyyib', admissionNo: '338', imageUrl: 'https://images.unsplash.com/photo-1783659998320-6f721f9b5d98?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-11', name: 'Ashbal', admissionNo: '339', imageUrl: 'https://images.unsplash.com/photo-1783656368832-0ecf5652e4ad?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-12', name: 'Rimshid Sajin', admissionNo: '341', imageUrl: 'https://images.unsplash.com/photo-1783659973465-19c07861a62f?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-13', name: 'Noufan', admissionNo: '342', imageUrl: 'https://images.unsplash.com/photo-1783651375248-806790718442?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-14', name: 'Jasim', admissionNo: '343' },
-  { id: 'm-15', name: 'Ashfin', admissionNo: '344' },
-  { id: 'm-16', name: 'Sinan.A', admissionNo: '345', imageUrl: 'https://images.unsplash.com/photo-1783659666901-c9364ab9ed0a?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-17', name: 'Shihan', admissionNo: '347', imageUrl: 'https://images.unsplash.com/photo-1783651312010-5587aa521a8e?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-18', name: 'Anas', admissionNo: '348' },
-  { id: 'm-19', name: 'Sinan.P', admissionNo: '350', imageUrl: 'https://images.unsplash.com/photo-1783659998293-658661dc1d14?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-20', name: 'Ansil', admissionNo: '351' },
-  { id: 'm-21', name: 'Iyas', admissionNo: '352', imageUrl: 'https://images.unsplash.com/photo-1783656386141-a497474796fa?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-22', name: 'Nihad.P', admissionNo: '355' },
-  { id: 'm-23', name: 'Swafvan.C', admissionNo: '356', imageUrl: 'https://images.unsplash.com/photo-1783659973415-7e659f70a495?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-24', name: 'Shahin', admissionNo: '357', imageUrl: 'https://images.unsplash.com/photo-1783659973468-ac47d8f8e667?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-25', name: 'Swafvan.P', admissionNo: '375', imageUrl: 'https://images.unsplash.com/photo-1783659973118-a5066496de6a?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'm-26', name: 'Shadi', admissionNo: '297' },
-  { id: 'm-27', name: 'Ayyoobi', admissionNo: '487', imageUrl: 'https://images.unsplash.com/photo-1783656368854-5b8633d691e5?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
+  { id: 'm-1', rollNo: 1, adNo: '297', admissionNo: '297', name: 'SHADI.V', status: 'Active', house: 'Manjeri', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', imageUrl: STUDENT_IMAGES['297'] },
+  { id: 'm-2', rollNo: 2, adNo: '325', admissionNo: '325', name: 'MUHAMMED SINAN.P', status: 'Active', house: 'Nilambur', attendance: 100, roleTitle: 'English & Arabic Wing', imageUrl: STUDENT_IMAGES['325'] },
+  { id: 'm-3', rollNo: 3, adNo: '326', admissionNo: '326', name: 'MUHAMMED AS\'AD .K', status: 'Active', house: 'Nellikuth', attendance: 100, roleTitle: 'Academics Wing', imageUrl: STUDENT_IMAGES['326'] },
+  { id: 'm-4', rollNo: 4, adNo: '328', admissionNo: '328', name: 'MUHAMMED HANAN.I', status: 'Active', house: 'Amayur', attendance: 100, roleTitle: 'Union President', imageUrl: STUDENT_IMAGES['328'] },
+  { id: 'm-5', rollNo: 5, adNo: '329', admissionNo: '329', name: 'MUHAMMED HAMDAN.M', status: 'Active', house: 'Poolamanna', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', imageUrl: STUDENT_IMAGES['329'] },
+  { id: 'm-6', rollNo: 6, adNo: '330', admissionNo: '330', name: 'AJSAL V.P.', status: 'Active', house: 'Poolamanna', attendance: 100, roleTitle: 'Union Treasurer', imageUrl: STUDENT_IMAGES['330'] },
+  { id: 'm-7', rollNo: 7, adNo: '332', admissionNo: '332', name: 'MUHAMMED AFNAN.T', status: 'Active', house: 'Velluvangad', attendance: 100, roleTitle: 'Malayalam & Urdu Wing', imageUrl: STUDENT_IMAGES['332'] },
+  { id: 'm-8', rollNo: 8, adNo: '333', admissionNo: '333', name: 'MOHAMMED FAYIZ K.K.', status: 'Active', house: 'Melattur', attendance: 100, roleTitle: 'IT & Art Wing & Web Admin', imageUrl: STUDENT_IMAGES['333'] },
+  { id: 'm-9', rollNo: 9, adNo: '336', admissionNo: '336', name: 'ABDUL RAHEEM E.K.', status: 'Active', house: 'Pattarkulam', attendance: 100, roleTitle: 'Sports Secretary', imageUrl: STUDENT_IMAGES['336'] },
+  { id: 'm-10', rollNo: 10, adNo: '337', admissionNo: '337', name: 'MUHAMMED FARHAN K.M.', status: 'Active', house: 'Panthallur', attendance: 100, roleTitle: 'Malayalam & Urdu Wing', imageUrl: STUDENT_IMAGES['337'] },
+  { id: 'm-11', rollNo: 11, adNo: '338', admissionNo: '338', name: 'MUHAMMED THOYYIB N.T.', status: 'Active', house: 'Karakkunu', attendance: 100, roleTitle: 'General Secretary', imageUrl: STUDENT_IMAGES['338'] },
+  { id: 'm-12', rollNo: 12, adNo: '339', admissionNo: '339', name: 'MUHAMMED ASHBAL .C', status: 'Active', house: 'Chokkad', attendance: 100, roleTitle: 'Working Secretary', imageUrl: STUDENT_IMAGES['339'] },
+  { id: 'm-13', rollNo: 13, adNo: '341', admissionNo: '341', name: 'RIMSHID SAJIN .N', status: 'Active', house: 'Perimbalam', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', imageUrl: STUDENT_IMAGES['341'] },
+  { id: 'm-14', rollNo: 14, adNo: '342', admissionNo: '342', name: 'MUHAMMED NOUFAN .N', status: 'Active', house: 'Irumbhuzhi', attendance: 100, roleTitle: 'Vice President', imageUrl: STUDENT_IMAGES['342'] },
+  { id: 'm-15', rollNo: 15, adNo: '343', admissionNo: '343', name: 'MUHAMMED JASIM T.K.', status: 'Active', house: 'Melkulankara', attendance: 100, roleTitle: 'P.R.O.', imageUrl: STUDENT_IMAGES['343'] },
+  { id: 'm-16', rollNo: 16, adNo: '344', admissionNo: '344', name: 'ASHFIN V.P.', status: 'Active', house: 'Payyanad', attendance: 100, roleTitle: 'Malayalam & Urdu Wing', imageUrl: STUDENT_IMAGES['344'] },
+  { id: 'm-17', rollNo: 17, adNo: '345', admissionNo: '345', name: 'MUHAMMED SINAN .A', status: 'Active', house: 'Kalambadi', attendance: 100, roleTitle: 'SRDB Wing', imageUrl: STUDENT_IMAGES['345'] },
+  { id: 'm-18', rollNo: 18, adNo: '347', admissionNo: '347', name: 'MUHAMMED SHIHAN P.P.', status: 'Active', house: 'Irumbuzhi', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', imageUrl: STUDENT_IMAGES['347'] },
+  { id: 'm-19', rollNo: 19, adNo: '348', admissionNo: '348', name: 'MUHAMMED ANAS P.P.', status: 'Active', house: 'Irumbuzhi', attendance: 100, roleTitle: 'English & Arabic Wing', imageUrl: STUDENT_IMAGES['348'] },
+  { id: 'm-20', rollNo: 20, adNo: '350', admissionNo: '350', name: 'MUHAMMED SINAN .P', status: 'Active', house: 'Karakkunnu', attendance: 100, roleTitle: 'Academics Wing', imageUrl: STUDENT_IMAGES['350'] },
+  { id: 'm-21', rollNo: 21, adNo: '351', admissionNo: '351', name: 'MUHAMMED ANSIL K.T.', status: 'Active', house: 'Chappanangadi', attendance: 100, roleTitle: 'IT & Art Wing', imageUrl: STUDENT_IMAGES['351'] },
+  { id: 'm-22', rollNo: 22, adNo: '352', admissionNo: '352', name: 'MUHAMMED IYAS .V', status: 'Active', house: 'Mangada', attendance: 100, roleTitle: 'English & Arabic Wing', imageUrl: STUDENT_IMAGES['352'] },
+  { id: 'm-23', rollNo: 23, adNo: '355', admissionNo: '355', name: 'MUHAMMED NIHAD .P', status: 'Active', house: 'Pallipuram, Mangada', attendance: 100, roleTitle: 'SRDB Wing', imageUrl: STUDENT_IMAGES['355'] },
+  { id: 'm-24', rollNo: 24, adNo: '356', admissionNo: '356', name: 'MUHAMMED SWAFWAN .C', status: 'Active', house: 'Wandoor', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', imageUrl: STUDENT_IMAGES['356'] },
+  { id: 'm-25', rollNo: 25, adNo: '357', admissionNo: '357', name: 'MUHAMMED SHAHIN .V', status: 'Active', house: 'Pattikkad', attendance: 100, roleTitle: 'Thazkiya Wing', imageUrl: STUDENT_IMAGES['357'] },
+  { id: 'm-26', rollNo: 26, adNo: '375', admissionNo: '375', name: 'MUHAMMED SWAFWAN .P', status: 'Active', house: 'Melattur', attendance: 100, roleTitle: 'Academics Wing', imageUrl: STUDENT_IMAGES['375'] },
+  { id: 'm-27', rollNo: 27, adNo: '487', admissionNo: '487', name: 'SWALAHUDHEEN AYYOOBI K.M.', status: 'Active', house: 'Nenmini', attendance: 100, roleTitle: 'Thazkiya Wing', imageUrl: STUDENT_IMAGES['487'] }
 ];
 
 const gradients = [
@@ -113,7 +140,11 @@ export default function About() {
 
   const filteredStudents = students.filter(student => 
     student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.admissionNo.includes(searchQuery)
+    student.adNo.includes(searchQuery) ||
+    student.admissionNo.includes(searchQuery) ||
+    student.house.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.roleTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.rollNo.toString().includes(searchQuery)
   );
 
   const getIcon = (id: string) => {
@@ -301,16 +332,26 @@ export default function About() {
                   setSelectedStudent(student);
                   setSelectedStudentIndex(index);
                 }}
-                className="glass-card p-5 rounded-2xl relative group overflow-hidden flex flex-col items-center text-center border border-white/5 bg-white/[0.02] hover:border-cyan-500/30 cursor-pointer select-none"
+                className="glass-card p-4 rounded-2xl relative group overflow-hidden flex flex-col items-center text-center border border-white/5 bg-white/[0.02] hover:border-cyan-500/30 cursor-pointer select-none"
               >
                 {/* Micro reflection sweep */}
                 <div className="absolute top-0 inset-x-0 h-10 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+
+                {/* Top Bar with Roll No & Ad No */}
+                <div className="w-full flex items-center justify-between text-[10px] font-mono text-neutral-400 mb-2.5 px-0.5">
+                  <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-neutral-300 font-bold">
+                    #{student.rollNo}
+                  </span>
+                  <span className="text-cyan-400 font-semibold text-[10px]">
+                    {student.adNo}
+                  </span>
+                </div>
 
                 {/* Ambient backdrop aura */}
                 <div className="absolute -top-10 -left-10 w-20 h-20 bg-cyan-500/5 group-hover:bg-cyan-500/10 rounded-full blur-xl transition-all duration-500 pointer-events-none" />
 
                 {/* Stylized Avatar Placeholder with initials or custom photo */}
-                <div className={`relative w-14 h-14 rounded-full overflow-hidden flex items-center justify-center font-display font-black text-sm text-white bg-gradient-to-tr ${getGradient(index)} shadow-[0_0_15px_rgba(6,182,212,0.1)] group-hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all duration-500 mb-3`}>
+                <div className={`relative w-14 h-14 rounded-full overflow-hidden flex items-center justify-center font-display font-black text-sm text-white bg-gradient-to-tr ${getGradient(index)} shadow-[0_0_15px_rgba(6,182,212,0.1)] group-hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all duration-500 mb-2.5`}>
                   {student.imageUrl ? (
                     <img
                       src={student.imageUrl}
@@ -324,11 +365,19 @@ export default function About() {
                 </div>
 
                 {/* Student Details */}
-                <h4 className="font-display font-bold text-xs text-white group-hover:text-cyan-400 transition-colors duration-200">
+                <h4 className="font-display font-bold text-xs text-white group-hover:text-cyan-400 transition-colors duration-200 line-clamp-1">
                   {student.name}
                 </h4>
-                <div className="font-mono text-[9px] text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-0.5 rounded-full mt-2 font-bold select-none">
-                  AD. NO: {student.admissionNo}
+
+                {/* Role Title */}
+                <span className="text-[10px] font-mono text-neutral-300 mt-1 line-clamp-1 max-w-full px-1">
+                  {student.roleTitle}
+                </span>
+
+                {/* House / Hometown */}
+                <div className="flex items-center gap-1 text-[10px] text-neutral-400 mt-1.5">
+                  <MapPin className="w-2.5 h-2.5 text-cyan-400 shrink-0" />
+                  <span className="truncate">{student.house}</span>
                 </div>
 
                 {/* Bottom line accent */}
@@ -369,7 +418,7 @@ export default function About() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 30 }}
               transition={{ type: 'spring', damping: 30, stiffness: 320 }}
-              className="relative w-full max-w-sm bg-neutral-950 border border-white/10 rounded-[32px] overflow-hidden p-8 flex flex-col items-center text-center shadow-[0_24px_50px_rgba(0,0,0,0.5)] z-10"
+              className="relative w-full max-w-md bg-neutral-950 border border-white/10 rounded-[32px] overflow-hidden p-7 sm:p-8 flex flex-col items-center text-center shadow-[0_24px_50px_rgba(0,0,0,0.5)] z-10"
             >
               {/* Close Button */}
               <button
@@ -390,7 +439,7 @@ export default function About() {
               <div className="absolute -top-12 -left-12 w-48 h-48 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none animate-pulse" />
 
               {/* Avatar with gradient or custom photo */}
-              <div className={`relative w-24 h-24 rounded-full overflow-hidden flex items-center justify-center font-display font-black text-3xl text-white bg-gradient-to-tr ${getGradient(selectedStudentIndex)} shadow-[0_0_30px_rgba(6,182,212,0.15)] mb-6`}>
+              <div className={`relative w-24 h-24 rounded-full overflow-hidden flex items-center justify-center font-display font-black text-3xl text-white bg-gradient-to-tr ${getGradient(selectedStudentIndex)} shadow-[0_0_30px_rgba(6,182,212,0.15)] mb-5`}>
                 {selectedStudent.imageUrl ? (
                   <img
                     src={selectedStudent.imageUrl}
@@ -403,25 +452,46 @@ export default function About() {
                 )}
               </div>
 
-              {/* Name & Admission Info */}
+              {/* Name */}
               <h3 className="font-display font-black text-2xl text-white tracking-tight">
                 {selectedStudent.name}
               </h3>
-              <div className="font-mono text-xs text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-4 py-1.5 rounded-full mt-3 font-bold select-none">
-                ADMISSION NO: {selectedStudent.admissionNo}
+
+              {/* Badges Row */}
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
+                <span className="font-mono text-xs text-neutral-300 bg-white/5 border border-white/10 px-3 py-1 rounded-full font-bold">
+                  Roll #{selectedStudent.rollNo}
+                </span>
+                <span className="font-mono text-xs text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-3 py-1 rounded-full font-bold">
+                  AD NO: {selectedStudent.adNo}
+                </span>
+                <span className="font-mono text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full font-bold">
+                  {selectedStudent.attendance}% Attendance
+                </span>
               </div>
 
               {/* Interactive Student Details Info */}
-              <div className="w-full mt-8 pt-6 border-t border-white/5 space-y-4 text-left">
+              <div className="w-full mt-6 pt-5 border-t border-white/5 space-y-3.5 text-left">
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 block">Union Designation / Wing</span>
+                  <span className="text-xs text-cyan-300 font-semibold font-sans mt-0.5 block">{selectedStudent.roleTitle}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 block">House / Hometown</span>
+                  <div className="flex items-center gap-1.5 mt-0.5 text-xs text-neutral-300 font-sans">
+                    <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>{selectedStudent.house}</span>
+                  </div>
+                </div>
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 block">Class Association</span>
-                  <span className="text-xs text-neutral-300 font-sans mt-1 block">USRA Batch • S5 Academic Session</span>
+                  <span className="text-xs text-neutral-300 font-sans mt-0.5 block">USRA 9th Batch • S5 Academic Session (The 27 Students)</span>
                 </div>
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 block">Official Status</span>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-                    <span className="text-xs text-cyan-400 font-mono font-bold uppercase tracking-wider">Active Member</span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="text-xs text-emerald-400 font-mono font-bold uppercase tracking-wider">{selectedStudent.status} Member</span>
                   </div>
                 </div>
                 <div>
