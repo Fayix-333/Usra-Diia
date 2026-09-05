@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import Loader from './components/Loader';
 import CustomCursor from './components/CustomCursor';
@@ -22,6 +22,29 @@ export default function App() {
   const [activeSection, setActiveSection] = useState('home');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+
+  useEffect(() => {
+    const iconUrl = 'https://images.unsplash.com/vector-1783664928814-1393e632b0c4?q=80&w=627&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
+    
+    // Ensure primary favicon
+    let iconLink = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+    if (!iconLink) {
+      iconLink = document.createElement('link');
+      iconLink.rel = 'icon';
+      document.head.appendChild(iconLink);
+    }
+    iconLink.href = iconUrl;
+    iconLink.type = 'image/png';
+
+    // Ensure apple touch icon
+    let appleTouchLink = document.querySelector<HTMLLinkElement>("link[rel='apple-touch-icon']");
+    if (!appleTouchLink) {
+      appleTouchLink = document.createElement('link');
+      appleTouchLink.rel = 'apple-touch-icon';
+      document.head.appendChild(appleTouchLink);
+    }
+    appleTouchLink.href = iconUrl;
+  }, []);
 
   return (
     <AuthProvider>
