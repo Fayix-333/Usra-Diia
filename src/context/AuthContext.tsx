@@ -127,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       name: matchedStudent.name,
       role: 'student_27',
       adNo: matchedStudent.adNo,
-      batch: '27-Student Cohort (Session 2026-27)',
+      batch: '27 Students (Session 2026-27)',
       department: matchedStudent.house,
       createdAt: new Date().toISOString()
     };
