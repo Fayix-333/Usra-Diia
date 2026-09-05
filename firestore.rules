@@ -26,6 +26,18 @@ service cloud.firestore {
       allow create: if true;
     }
 
+    // Secure student credentials: listing is denied so only admin can view through Firebase Console
+    match /studentCredentials/{adNo} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if true;
+    }
+
+    // Class messages between 27 students and Class Teacher
+    match /classMessages/{messageId} {
+      allow read, write: if true;
+    }
+
     match /test/connection {
       allow read, write: if true;
     }
