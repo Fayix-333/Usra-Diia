@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, LogOut, Shield, GraduationCap, Users, Bell, Plus, Trash2, Calendar, Award, CheckCircle, Search, Mail, ExternalLink, Sparkles, AlertTriangle, Send, Check } from 'lucide-react';
+import { 
+  X, LogOut, Shield, GraduationCap, Users, Bell, Plus, Trash2, 
+  Calendar, Award, CheckCircle, Search, Mail, ExternalLink, Sparkles, 
+  AlertTriangle, Send, Check, KeyRound, MessageSquare, Reply, Lock 
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { db, collection, addDoc } from '../firebase';
 
@@ -12,7 +16,18 @@ interface PortalDashboardProps {
 const TARGET_GMAIL = 'usradiia9@gmail.com';
 
 export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProps) {
-  const { currentUser, logout, announcements, addAnnouncement, deleteAnnouncement, students27List } = useAuth();
+  const { 
+    currentUser, 
+    logout, 
+    announcements, 
+    addAnnouncement, 
+    deleteAnnouncement, 
+    students27List,
+    classMessages,
+    sendClassMessage,
+    replyClassMessage,
+    changeStudentPassword
+  } = useAuth();
   
   // Announcement creator state (Usthad)
   const [showAddNotice, setShowAddNotice] = useState(false);
@@ -29,6 +44,22 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
   const [isSendingDirect, setIsSendingDirect] = useState(false);
   const [directSentSuccess, setDirectSentSuccess] = useState(false);
 
+  // Student Password Change State (27 Students)
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isChangingPass, setIsChangingPass] = useState(false);
+
+  // Student Message to Class Teacher State (27 Students)
+  const [studentMsgText, setStudentMsgText] = useState('');
+  const [isSendingStudentMsg, setIsSendingStudentMsg] = useState(false);
+  const [studentMsgFeedback, setStudentMsgFeedback] = useState<string | null>(null);
+
+  // Usthad Reply State
+  const [replyTextMap, setReplyTextMap] = useState<Record<string, string>>({});
+  const [isSendingReply, setIsSendingReply] = useState<string | null>(null);
+
   // Student search
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -37,6 +68,7 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
   const isUsthad = currentUser.role === 'usthad_fsl';
   const isStudent27 = currentUser.role === 'student_27';
   const currentStudentData = isStudent27 ? students27List.find(s => s.adNo === currentUser.adNo) : null;
+  const myClassMessages = classMessages.filter(m => m.studentAdNo === currentUser.adNo);
 
   const handleCreateAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +80,67 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
     setNewTitle('');
     setNewContent('');
     setShowAddNotice(false);
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser?.adNo) return;
+    if (newPassword.length < 4) {
+      setPasswordMsg({ type: 'error', text: 'Password must be at least 4 characters long.' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg({ type: 'error', text: 'Passwords do not match. Please re-enter.' });
+      return;
+    }
+
+    setIsChangingPass(true);
+    setPasswordMsg(null);
+    const res = await changeStudentPassword(currentUser.adNo, newPassword);
+    setIsChangingPass(false);
+
+    if (res.success) {
+      setPasswordMsg({ 
+        type: 'success', 
+        text: 'Password updated successfully in Firebase! Next time you log in, use your new password.' 
+      });
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        setShowChangePassword(false);
+        setPasswordMsg(null);
+      }, 3500);
+    } else {
+      setPasswordMsg({ type: 'error', text: res.error || 'Failed to update password.' });
+    }
+  };
+
+  const handleSendStudentMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!studentMsgText.trim()) return;
+
+    setIsSendingStudentMsg(true);
+    setStudentMsgFeedback(null);
+    const res = await sendClassMessage(studentMsgText.trim());
+    setIsSendingStudentMsg(false);
+
+    if (res.success) {
+      setStudentMsgText('');
+      setStudentMsgFeedback('Message sent directly to Class Teacher (Usthad Fazlu Rehman Hudawi)!');
+      setTimeout(() => setStudentMsgFeedback(null), 4000);
+    } else {
+      setStudentMsgFeedback(res.error || 'Failed to send message.');
+    }
+  };
+
+  const handleReplyMessage = async (msgId: string) => {
+    const text = replyTextMap[msgId]?.trim();
+    if (!text) return;
+
+    setIsSendingReply(msgId);
+    await replyClassMessage(msgId, text);
+    setIsSendingReply(null);
+    setReplyTextMap(prev => ({ ...prev, [msgId]: '' }));
   };
 
   const handleSendDirectMessage = async (e: React.FormEvent) => {
@@ -160,7 +253,7 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                       ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
                       : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
                   }`}>
-                    {isUsthad ? 'Usthad Executive' : isStudent27 ? `27 Cohort • Ad No: ${currentUser.adNo}` : 'Campus Member'}
+                    {isUsthad ? 'Class Teacher Executive' : isStudent27 ? `27 Students • Ad No: ${currentUser.adNo}` : 'Campus Member'}
                   </span>
                   <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -174,6 +267,23 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Change Password quick button for 27 Students */}
+              {isStudent27 && (
+                <button
+                  onClick={() => setShowChangePassword(prev => !prev)}
+                  className={`px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all border cursor-pointer ${
+                    showChangePassword
+                      ? 'bg-cyan-600 text-white border-cyan-400 shadow-lg shadow-cyan-500/25'
+                      : 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
+                  }`}
+                  title="Change your student portal password (saved to Firebase)"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="hidden sm:inline">Change Password</span>
+                  <span className="sm:hidden">Password</span>
+                </button>
+              )}
+
               <button
                 onClick={() => setShowDirectMessage(prev => !prev)}
                 className={`px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all border cursor-pointer ${
@@ -306,25 +416,257 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
             
             {/* ROLE-BASED TOP BANNER */}
             {isStudent27 && (
-              <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900/30 via-indigo-900/20 to-neutral-900/40 border border-blue-500/20 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
-                  <div>
-                    <span className="text-[10px] font-mono uppercase text-neutral-400 block">Admission Number</span>
-                    <span className="text-xl font-bold font-mono text-blue-400">{currentUser.adNo}</span>
+              <div className="space-y-4">
+                <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900/30 via-indigo-900/20 to-neutral-900/40 border border-blue-500/20 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10 mb-4 border-b border-white/5 pb-4">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-blue-400 font-bold tracking-wider">Class Student Portal</span>
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <span>Welcome, {currentUser.name}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-mono font-normal">27 Students</span>
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowChangePassword(prev => !prev)}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-mono font-medium flex items-center gap-2 transition-all cursor-pointer ${
+                          showChangePassword
+                            ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/25'
+                            : 'bg-white/5 hover:bg-white/10 text-cyan-300 border border-cyan-500/30'
+                        }`}
+                      >
+                        <KeyRound className="w-3.5 h-3.5" />
+                        <span>{showChangePassword ? 'Hide Password Form' : 'Change Password'}</span>
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] font-mono uppercase text-neutral-400 block">Academic Class</span>
-                    <span className="text-sm font-semibold text-white">27 Students</span>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-neutral-400 block">Admission Number</span>
+                      <span className="text-xl font-bold font-mono text-blue-400">{currentUser.adNo}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-neutral-400 block">Academic Class</span>
+                      <span className="text-sm font-semibold text-white">27 Students</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-neutral-400 block">Department / House</span>
+                      <span className="text-sm font-semibold text-cyan-300">{currentStudentData?.house || currentUser.department || 'Cordova'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-neutral-400 block">Attendance Standing</span>
+                      <span className="text-sm font-semibold text-emerald-400">{currentStudentData ? `${currentStudentData.attendance}% Regular` : '100% Regular'}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] font-mono uppercase text-neutral-400 block">Department / House</span>
-                    <span className="text-sm font-semibold text-cyan-300">{currentStudentData?.house || currentUser.department || 'Cordova'}</span>
+                </div>
+
+                {/* PASSWORD CHANGING PANEL (STUDENT EXCLUSIVE - SAVES TO FIREBASE) */}
+                <AnimatePresence>
+                  {showChangePassword && (
+                    <motion.form
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      onSubmit={handlePasswordChange}
+                      className="p-6 rounded-2xl bg-neutral-900/90 border border-cyan-500/40 space-y-4 shadow-2xl relative overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                            <Lock className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="font-display font-bold text-sm text-white">Change Student Password</h4>
+                            <p className="text-[11px] text-neutral-400">
+                              Updated securely in Firebase Firestore. Only system admins can access this data.
+                            </p>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                          Ad No: {currentUser.adNo}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-neutral-400 block mb-1">
+                            New Password
+                          </label>
+                          <input
+                            type="password"
+                            required
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Enter new password (min. 4 chars)"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-cyan-500/50"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-neutral-400 block mb-1">
+                            Confirm New Password
+                          </label>
+                          <input
+                            type="password"
+                            required
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Re-type new password"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-cyan-500/50"
+                          />
+                        </div>
+                      </div>
+
+                      {passwordMsg && (
+                        <div className={`p-3 rounded-xl text-xs font-mono flex items-center gap-2 border ${
+                          passwordMsg.type === 'success'
+                            ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                            : 'bg-rose-500/10 text-rose-300 border-rose-500/30'
+                        }`}>
+                          {passwordMsg.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                          <span>{passwordMsg.text}</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-[11px] text-neutral-500 font-mono">
+                          Tip: Store this safely. Your next login will require this password.
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowChangePassword(false);
+                              setPasswordMsg(null);
+                            }}
+                            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 text-xs font-mono"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isChangingPass || !newPassword}
+                            className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-black font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            {isChangingPass ? (
+                              <span>Saving to Firebase...</span>
+                            ) : (
+                              <>
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Save New Password</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </motion.form>
+                  )}
+                </AnimatePresence>
+
+                {/* STUDENT-TEACHER PRIVATE MESSAGING (CLASS 27 EXCLUSIVE) */}
+                <div className="p-6 rounded-2xl bg-neutral-900/60 border border-blue-500/20 space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                        <MessageSquare className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-display font-bold text-sm text-white">
+                          Direct Message to Class Teacher
+                        </h4>
+                        <p className="text-[11px] text-neutral-400">
+                          Usthad Fazlu Rehman Hudawi [Class Teacher] • Confidential class channel
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                      Private Channel
+                    </span>
                   </div>
-                  <div>
-                    <span className="text-[10px] font-mono uppercase text-neutral-400 block">Attendance Standing</span>
-                    <span className="text-sm font-semibold text-emerald-400">{currentStudentData ? `${currentStudentData.attendance}% Regular` : '100% Regular'}</span>
-                  </div>
+
+                  <form onSubmit={handleSendStudentMessage} className="space-y-3">
+                    <textarea
+                      required
+                      rows={3}
+                      value={studentMsgText}
+                      onChange={(e) => setStudentMsgText(e.target.value)}
+                      placeholder="Ask questions, submit leave requests, report issues, or send personal notes to your Class Teacher..."
+                      className="w-full p-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-blue-500/50 resize-none"
+                    />
+
+                    {studentMsgFeedback && (
+                      <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        <span>{studentMsgFeedback}</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-neutral-500 font-mono">
+                        Not accessible to other students or external campus members.
+                      </span>
+                      <button
+                        type="submit"
+                        disabled={isSendingStudentMsg || !studentMsgText.trim()}
+                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        {isSendingStudentMsg ? (
+                          <span>Sending...</span>
+                        ) : (
+                          <>
+                            <span>Send to Class Teacher</span>
+                            <Send className="w-3.5 h-3.5" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* Previous messages from this student */}
+                  {myClassMessages.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
+                      <h5 className="text-xs font-mono text-neutral-400 font-semibold uppercase tracking-wider">
+                        Your Conversation History ({myClassMessages.length})
+                      </h5>
+                      <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                        {myClassMessages.map((msg) => (
+                          <div key={msg.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-mono text-neutral-400">
+                                {new Date(msg.createdAt).toLocaleString()}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
+                                msg.status === 'replied'
+                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              }`}>
+                                {msg.status === 'replied' ? 'Replied by Usthad' : 'Awaiting Reply'}
+                              </span>
+                            </div>
+                            <p className="text-white text-xs leading-relaxed">{msg.message}</p>
+                            {msg.reply && (
+                              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/25 mt-2 space-y-1">
+                                <div className="flex items-center justify-between text-[10px] font-mono text-amber-300">
+                                  <span className="font-bold flex items-center gap-1">
+                                    <Shield className="w-3 h-3" />
+                                    <span>Usthad Fazlu Rehman Hudawi [Class Teacher]</span>
+                                  </span>
+                                  {msg.repliedAt && (
+                                    <span className="text-neutral-400">
+                                      {new Date(msg.repliedAt).toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-amber-100 text-xs">{msg.reply}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -424,6 +766,131 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
               </motion.form>
             )}
 
+            {/* CLASS TEACHER DIRECT STUDENT MESSAGES INBOX */}
+            {isUsthad && (
+              <div className="p-6 rounded-2xl bg-neutral-900/80 border border-amber-500/30 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                      <MessageSquare className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-base text-white flex items-center gap-2">
+                        <span>27 Students Class Inbox</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          {classMessages.length} Messages
+                        </span>
+                      </h3>
+                      <p className="text-neutral-400 text-xs">
+                        Confidential direct queries & requests submitted by students from the 27 Students batch
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Live Class Teacher Channel
+                  </span>
+                </div>
+
+                {classMessages.length > 0 ? (
+                  <div className="space-y-3">
+                    {classMessages.map((msg) => {
+                      const isPending = msg.status === 'pending';
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`p-4 rounded-xl border transition-all ${
+                            isPending
+                              ? 'bg-amber-950/20 border-amber-500/30'
+                              : 'bg-white/[0.02] border-white/5'
+                          }`}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white text-xs">{msg.studentName}</span>
+                              <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[10px] font-mono">
+                                Ad No: {msg.studentAdNo}
+                              </span>
+                              {msg.studentRollNo && (
+                                <span className="text-neutral-400 text-[10px] font-mono">
+                                  Roll #{msg.studentRollNo}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-mono text-neutral-500">
+                                {new Date(msg.createdAt).toLocaleString()}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
+                                isPending
+                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              }`}>
+                                {isPending ? 'Awaiting Reply' : 'Replied'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <p className="text-neutral-200 text-xs leading-relaxed mb-3 bg-black/20 p-3 rounded-lg border border-white/5">
+                            {msg.message}
+                          </p>
+
+                          {msg.reply && (
+                            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 mb-3 space-y-1">
+                              <div className="flex items-center justify-between text-[10px] font-mono text-emerald-300">
+                                <span className="font-bold flex items-center gap-1">
+                                  <Shield className="w-3 h-3" />
+                                  <span>Your Official Reply</span>
+                                </span>
+                                {msg.repliedAt && (
+                                  <span className="text-neutral-400">
+                                    {new Date(msg.repliedAt).toLocaleString()}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-emerald-100 text-xs">{msg.reply}</p>
+                            </div>
+                          )}
+
+                          {/* Reply input field */}
+                          <div className="flex gap-2 pt-2 border-t border-white/5">
+                            <input
+                              type="text"
+                              value={replyTextMap[msg.id] ?? ''}
+                              onChange={(e) => setReplyTextMap(prev => ({ ...prev, [msg.id]: e.target.value }))}
+                              placeholder={msg.reply ? 'Update your reply...' : 'Type reply to this student...'}
+                              className="flex-1 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-amber-500/50"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleReplyMessage(msg.id)}
+                              disabled={isSendingReply === msg.id || !replyTextMap[msg.id]?.trim()}
+                              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                              {isSendingReply === msg.id ? (
+                                <span>Sending...</span>
+                              ) : (
+                                <>
+                                  <Reply className="w-3 h-3" />
+                                  <span>Reply</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-6 rounded-xl bg-white/[0.02] border border-white/5 text-center">
+                    <p className="text-neutral-400 text-xs font-mono">
+                      No student messages received yet. Messages sent from the 27 Students dashboard will appear here.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* OFFICIAL ANNOUNCEMENTS SECTION */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -491,75 +958,87 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
               )}
             </div>
 
-            {/* 27-STUDENT COHORT ROSTER */}
-            <div className="space-y-3 pt-4 border-t border-white/5">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                  <h3 className="font-display font-bold text-base text-white flex items-center gap-2">
-                    <GraduationCap className="w-4 h-4 text-cyan-400" />
-                    <span>The 27 Students Roster</span>
-                  </h3>
-                  <p className="text-neutral-400 text-xs">
-                    Academic Year 2026-27 • Username & Password matches each student&#39;s Admission Number
-                  </p>
+            {/* 27 STUDENTS ROSTER (RESTRICTED TO CLASS TEACHER AND 27 STUDENTS) */}
+            {(isUsthad || isStudent27) ? (
+              <div className="space-y-3 pt-4 border-t border-white/5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-display font-bold text-base text-white flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-cyan-400" />
+                      <span>The 27 Students Roster</span>
+                    </h3>
+                    <p className="text-neutral-400 text-xs">
+                      Academic Year 2026-27 • 27 Students Class Records • Private to Class Teacher & Class Members
+                    </p>
+                  </div>
+                  
+                  {/* Search Bar */}
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search by Ad No or Name..."
+                      className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
                 </div>
-                
-                {/* Search Bar */}
-                <div className="relative w-full sm:w-64">
-                  <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by Ad No or Name..."
-                    className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-cyan-500/50"
-                  />
-                </div>
-              </div>
 
-              {/* Table / Grid */}
-              <div className="rounded-2xl border border-white/5 overflow-hidden bg-white/[0.01]">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-neutral-950/80 font-mono text-[10px] uppercase tracking-wider text-neutral-400 border-b border-white/5">
-                      <tr>
-                        <th className="p-3 pl-4">Roll</th>
-                        <th className="p-3">Ad No (Login)</th>
-                        <th className="p-3">Student Name</th>
-                        <th className="p-3">House</th>
-                        <th className="p-3">Union Designation</th>
-                        <th className="p-3 text-right pr-4">Attendance</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5 font-sans">
-                      {filteredStudents.map((stu) => {
-                        const isThisUser = currentUser.adNo === stu.adNo;
-                        return (
-                          <tr
-                            key={stu.adNo}
-                            className={`hover:bg-white/[0.03] transition-colors ${
-                              isThisUser ? 'bg-blue-500/10 font-medium' : ''
-                            }`}
-                          >
-                            <td className="p-3 pl-4 font-mono text-neutral-400">#{stu.rollNo}</td>
-                            <td className="p-3 font-mono text-cyan-400 font-semibold">
-                              {stu.adNo}
-                              {isThisUser && (
-                                <span className="ml-1.5 px-1.5 py-0.5 rounded text-[9px] bg-blue-500/20 text-blue-300">You</span>
-                              )}
-                            </td>
-                            <td className="p-3 text-white font-medium">{stu.name}</td>
-                            <td className="p-3 text-neutral-300">{stu.house}</td>
-                            <td className="p-3 text-neutral-400 text-[11px]">{stu.roleTitle || 'Class Member'}</td>
-                            <td className="p-3 text-right pr-4 font-mono text-emerald-400">{stu.attendance}%</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                {/* Table / Grid */}
+                <div className="rounded-2xl border border-white/5 overflow-hidden bg-white/[0.01]">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-neutral-950/80 font-mono text-[10px] uppercase tracking-wider text-neutral-400 border-b border-white/5">
+                        <tr>
+                          <th className="p-3 pl-4">Roll</th>
+                          <th className="p-3">Ad No</th>
+                          <th className="p-3">Student Name</th>
+                          <th className="p-3">House</th>
+                          <th className="p-3">Union Designation</th>
+                          <th className="p-3 text-right pr-4">Attendance</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 font-sans">
+                        {filteredStudents.map((stu) => {
+                          const isThisUser = currentUser.adNo === stu.adNo;
+                          return (
+                            <tr
+                              key={stu.adNo}
+                              className={`hover:bg-white/[0.03] transition-colors ${
+                                isThisUser ? 'bg-blue-500/10 font-medium' : ''
+                              }`}
+                            >
+                              <td className="p-3 pl-4 font-mono text-neutral-400">#{stu.rollNo}</td>
+                              <td className="p-3 font-mono text-cyan-400 font-semibold">
+                                {stu.adNo}
+                                {isThisUser && (
+                                  <span className="ml-1.5 px-1.5 py-0.5 rounded text-[9px] bg-blue-500/20 text-blue-300">You</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-white font-medium">{stu.name}</td>
+                              <td className="p-3 text-neutral-300">{stu.house}</td>
+                              <td className="p-3 text-neutral-400 text-[11px]">{stu.roleTitle || 'Class Member'}</td>
+                              <td className="p-3 text-right pr-4 font-mono text-emerald-400">{stu.attendance}%</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center space-y-2 pt-6 border-t">
+                <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center mx-auto text-neutral-400">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <h4 className="text-white font-bold text-sm">Class Personal Section Restricted</h4>
+                <p className="text-neutral-400 text-xs max-w-md mx-auto">
+                  The 27 Students class roster, private messaging with the Class Teacher, and class student credentials are strictly confidential and restricted to the Class Teacher (Usthad Fazlu Rehman Hudawi) and enrolled students of the 27 Students batch.
+                </p>
+              </div>
+            )}
 
           </div>
         </motion.div>
