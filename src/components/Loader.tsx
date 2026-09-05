@@ -57,9 +57,12 @@ export default function Loader({ onComplete }: LoaderProps) {
               <div className="w-full h-full rounded-2xl bg-[#090909] flex items-center justify-center relative overflow-hidden group">
                 {/* Liquid Glass shine effect */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50" />
-                <span className="font-display font-extrabold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-white via-neutral-200 to-neutral-400 select-none">
-                  U
-                </span>
+                <img 
+                  src="https://images.unsplash.com/vector-1783664928814-1393e632b0c4?q=80&w=627&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                  alt="USRA Crest" 
+                  referrerPolicy="no-referrer"
+                  className="w-12 h-12 object-contain relative z-10 p-1 select-none filter drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+                />
                 {/* Micro reflection */}
                 <div className="absolute top-0 left-0 right-0 h-[50%] bg-gradient-to-b from-white/20 to-transparent" />
               </div>
