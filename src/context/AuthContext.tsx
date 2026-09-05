@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AuthUser, AnnouncementItem, Student27 } from '../types';
+import { AuthUser, AnnouncementItem, Student27, ClassMessage } from '../types';
 import { STUDENTS_27_ROSTER, findStudentByAdNo } from '../data/students27';
 import { db, auth, googleProvider } from '../firebase';
 import { doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, deleteDoc } from 'firebase/firestore';
@@ -19,6 +19,13 @@ interface AuthContextType {
   addAnnouncement: (title: string, content: string, priority: 'normal' | 'urgent' | 'info', target: 'all' | 'students_27' | 'usthads') => Promise<void>;
   deleteAnnouncement: (id: string) => Promise<void>;
   students27List: Student27[];
+  // Class 27 Exclusive Directives & Teacher Chat
+  classMessages: ClassMessage[];
+  sendClassMessage: (message: string) => Promise<{ success: boolean; error?: string }>;
+  replyClassMessage: (messageId: string, reply: string) => Promise<{ success: boolean; error?: string }>;
+  refreshClassMessages: () => Promise<void>;
+  // Student Password Modification (Recorded to Firestore for Admin)
+  changeStudentPassword: (adNo: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,6 +42,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [isLoading, setIsLoading] = useState(false);
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
+  const [classMessages, setClassMessages] = useState<ClassMessage[]>([]);
+
+  // Load class messages between 27 students & Class Teacher
+  const refreshClassMessages = async () => {
+    try {
+      const q = query(collection(db, 'classMessages'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const msgs: ClassMessage[] = snap.docs.map(d => ({
+          id: d.id,
+          ...(d.data() as Omit<ClassMessage, 'id'>)
+        }));
+        setClassMessages(msgs);
+      }
+    } catch (err) {
+      console.log('[Firestore] Class messages note:', err);
+    }
+  };
+
+  useEffect(() => {
+    refreshClassMessages();
+  }, [currentUser]);
 
   // Load announcements from Firestore
   useEffect(() => {
@@ -108,17 +137,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
 
-    // Password must match admission number or roll number or exact entry
-    const validMatches = [
-      matchedStudent.adNo.toLowerCase(),
-      `ad${matchedStudent.adNo.toLowerCase()}`,
-      matchedStudent.rollNo.toString(),
-      cleanAdNo.toLowerCase()
-    ];
+    // Check if custom password was saved in Firestore or local cache
+    let customPassword = '';
+    try {
+      const localCache = localStorage.getItem('usra_student_passwords');
+      if (localCache) {
+        const parsed = JSON.parse(localCache);
+        if (parsed[matchedStudent.adNo]) {
+          customPassword = parsed[matchedStudent.adNo];
+        }
+      }
 
-    if (!validMatches.includes(cleanPass.toLowerCase())) {
-      setIsLoading(false);
-      return { success: false, error: 'Password must match your Admission Number.' };
+      // Check Firestore studentCredentials
+      const credSnap = await getDoc(doc(db, 'studentCredentials', matchedStudent.adNo));
+      if (credSnap.exists()) {
+        const data = credSnap.data();
+        if (data?.password) {
+          customPassword = data.password;
+          // sync local cache
+          const existing = localCache ? JSON.parse(localCache) : {};
+          existing[matchedStudent.adNo] = data.password;
+          localStorage.setItem('usra_student_passwords', JSON.stringify(existing));
+        }
+      }
+    } catch (err) {
+      console.log('[Auth] Credentials check note:', err);
+    }
+
+    if (customPassword) {
+      if (cleanPass !== customPassword) {
+        setIsLoading(false);
+        return { success: false, error: 'Incorrect password entered.' };
+      }
+    } else {
+      // Default: Password matches admission number or roll number
+      const validMatches = [
+        matchedStudent.adNo.toLowerCase(),
+        `ad${matchedStudent.adNo.toLowerCase()}`,
+        matchedStudent.rollNo.toString(),
+        cleanAdNo.toLowerCase()
+      ];
+
+      if (!validMatches.includes(cleanPass.toLowerCase())) {
+        setIsLoading(false);
+        return { success: false, error: 'Password must match your Admission Number (or updated password).' };
+      }
     }
 
     const studentUser: AuthUser = {
@@ -135,6 +198,109 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await saveUserSession(studentUser);
     setIsLoading(false);
     return { success: true };
+  };
+
+  // Password Changing function for 27 students - persists to Firestore studentCredentials
+  const changeStudentPassword = async (adNo: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+    const cleanAdNo = adNo.trim();
+    const cleanPass = newPassword.trim();
+
+    if (!cleanPass || cleanPass.length < 4) {
+      setIsLoading(false);
+      return { success: false, error: 'Password must be at least 4 characters.' };
+    }
+
+    const matched = findStudentByAdNo(cleanAdNo);
+    const studentName = matched?.name || currentUser?.name || cleanAdNo;
+
+    try {
+      // Write to Firestore studentCredentials (accessible to admin via Firebase console)
+      await setDoc(doc(db, 'studentCredentials', cleanAdNo), {
+        adNo: cleanAdNo,
+        studentName,
+        password: cleanPass,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      // Save to local cache as well
+      const localCache = localStorage.getItem('usra_student_passwords');
+      const existing = localCache ? JSON.parse(localCache) : {};
+      existing[cleanAdNo] = cleanPass;
+      localStorage.setItem('usra_student_passwords', JSON.stringify(existing));
+
+      setIsLoading(false);
+      return { success: true };
+    } catch (err: any) {
+      console.warn('[Firestore] Storing credentials fallback:', err);
+      // Even if offline, save locally
+      const localCache = localStorage.getItem('usra_student_passwords');
+      const existing = localCache ? JSON.parse(localCache) : {};
+      existing[cleanAdNo] = cleanPass;
+      localStorage.setItem('usra_student_passwords', JSON.stringify(existing));
+
+      setIsLoading(false);
+      return { success: true };
+    }
+  };
+
+  // Send message to Class Teacher
+  const sendClassMessage = async (messageText: string): Promise<{ success: boolean; error?: string }> => {
+    if (!currentUser || currentUser.role !== 'student_27') {
+      return { success: false, error: 'Only class students can send messages to the Class Teacher.' };
+    }
+    const cleanText = messageText.trim();
+    if (!cleanText) {
+      return { success: false, error: 'Please enter a message.' };
+    }
+
+    const newMsg: ClassMessage = {
+      id: `msg-${Date.now()}`,
+      studentAdNo: currentUser.adNo || '',
+      studentName: currentUser.name,
+      studentHouse: currentUser.department || 'Cordova',
+      message: cleanText,
+      status: 'unread',
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      const docRef = await addDoc(collection(db, 'classMessages'), newMsg);
+      const savedMsg = { ...newMsg, id: docRef.id };
+      setClassMessages(prev => [savedMsg, ...prev]);
+      return { success: true };
+    } catch (err) {
+      console.warn('[Firestore] Message sent locally:', err);
+      setClassMessages(prev => [newMsg, ...prev]);
+      return { success: true };
+    }
+  };
+
+  // Class Teacher reply to a student message
+  const replyClassMessage = async (messageId: string, replyText: string): Promise<{ success: boolean; error?: string }> => {
+    if (!currentUser || currentUser.role !== 'usthad_fsl') {
+      return { success: false, error: 'Only the Class Teacher can reply.' };
+    }
+    const cleanReply = replyText.trim();
+    if (!cleanReply) {
+      return { success: false, error: 'Please enter a reply.' };
+    }
+
+    const updates = {
+      reply: cleanReply,
+      replyAt: new Date().toISOString(),
+      status: 'read' as const
+    };
+
+    try {
+      await setDoc(doc(db, 'classMessages', messageId), updates, { merge: true });
+      setClassMessages(prev => prev.map(m => m.id === messageId ? { ...m, ...updates } : m));
+      return { success: true };
+    } catch (err) {
+      console.warn('[Firestore] Reply saved locally:', err);
+      setClassMessages(prev => prev.map(m => m.id === messageId ? { ...m, ...updates } : m));
+      return { success: true };
+    }
   };
 
   // 2. Login for Usthad (fsl / fsl)
@@ -327,7 +493,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         announcements,
         addAnnouncement,
         deleteAnnouncement,
-        students27List: STUDENTS_27_ROSTER
+        students27List: STUDENTS_27_ROSTER,
+        classMessages,
+        sendClassMessage,
+        replyClassMessage,
+        refreshClassMessages,
+        changeStudentPassword
       }}
     >
       {children}
