@@ -323,7 +323,7 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                   </div>
                   <div>
                     <span className="text-[10px] font-mono uppercase text-neutral-400 block">Attendance Standing</span>
-                    <span className="text-sm font-semibold text-emerald-400">{currentStudentData ? `${currentStudentData.attendance}% Regular` : '96% Regular'}</span>
+                    <span className="text-sm font-semibold text-emerald-400">{currentStudentData ? `${currentStudentData.attendance}% Regular` : '100% Regular'}</span>
                   </div>
                 </div>
               </div>
@@ -438,48 +438,57 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {announcements.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`p-4 rounded-2xl border transition-all ${
-                      item.priority === 'urgent'
-                        ? 'bg-rose-950/20 border-rose-500/30'
-                        : 'bg-white/[0.02] border-white/5 hover:border-blue-500/20'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider ${
+              {announcements.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {announcements.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`p-4 rounded-2xl border transition-all ${
                         item.priority === 'urgent'
-                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                          : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                      }`}>
-                        {item.priority}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[9px] text-neutral-500">
-                          {new Date(item.createdAt).toLocaleDateString()}
+                          ? 'bg-rose-950/20 border-rose-500/30'
+                          : 'bg-white/[0.02] border-white/5 hover:border-blue-500/20'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider ${
+                          item.priority === 'urgent'
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                        }`}>
+                          {item.priority}
                         </span>
-                        {isUsthad && (
-                          <button
-                            onClick={() => deleteAnnouncement(item.id)}
-                            className="p-1 rounded text-neutral-500 hover:text-rose-400 transition-colors"
-                            title="Delete announcement"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[9px] text-neutral-500">
+                            {new Date(item.createdAt).toLocaleDateString()}
+                          </span>
+                          {isUsthad && (
+                            <button
+                              onClick={() => deleteAnnouncement(item.id)}
+                              className="p-1 rounded text-neutral-500 hover:text-rose-400 transition-colors cursor-pointer"
+                              title="Delete announcement"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <h4 className="font-display font-bold text-sm text-white mb-1.5">{item.title}</h4>
+                      <p className="text-neutral-300 text-xs leading-relaxed mb-3">{item.content}</p>
+                      <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[10px] font-mono text-neutral-400">
+                        <span>Posted by: {item.authorName}</span>
+                        <span className="text-blue-400">{item.authorRole}</span>
                       </div>
                     </div>
-                    <h4 className="font-display font-bold text-sm text-white mb-1.5">{item.title}</h4>
-                    <p className="text-neutral-300 text-xs leading-relaxed mb-3">{item.content}</p>
-                    <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[10px] font-mono text-neutral-400">
-                      <span>Posted by: {item.authorName}</span>
-                      <span className="text-blue-400">{item.authorRole}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center space-y-1">
+                  <p className="text-neutral-400 text-xs font-mono">No active directives or announcements currently posted.</p>
+                  {isUsthad && (
+                    <p className="text-amber-400/80 text-[11px] font-mono">Click &quot;Post New Notice&quot; above to publish an official cohort directive.</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* 27-STUDENT COHORT ROSTER */}
