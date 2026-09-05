@@ -958,17 +958,17 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
               )}
             </div>
 
-            {/* 27 STUDENTS ROSTER (RESTRICTED TO CLASS TEACHER AND 27 STUDENTS) */}
-            {(isUsthad || isStudent27) ? (
+            {/* 27 STUDENTS ROSTER (RESTRICTED EXCLUSIVELY TO CLASS TEACHER) */}
+            {isUsthad && (
               <div className="space-y-3 pt-4 border-t border-white/5">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-display font-bold text-base text-white flex items-center gap-2">
                       <GraduationCap className="w-4 h-4 text-cyan-400" />
-                      <span>The 27 Students Roster</span>
+                      <span>The 27 Students Class Roster</span>
                     </h3>
                     <p className="text-neutral-400 text-xs">
-                      Academic Year 2026-27 • 27 Students Class Records • Private to Class Teacher & Class Members
+                      Class Teacher Oversight • Academic Year 2026-27 • 27 Students Records
                     </p>
                   </div>
                   
@@ -1001,20 +1001,14 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                       </thead>
                       <tbody className="divide-y divide-white/5 font-sans">
                         {filteredStudents.map((stu) => {
-                          const isThisUser = currentUser.adNo === stu.adNo;
                           return (
                             <tr
                               key={stu.adNo}
-                              className={`hover:bg-white/[0.03] transition-colors ${
-                                isThisUser ? 'bg-blue-500/10 font-medium' : ''
-                              }`}
+                              className="hover:bg-white/[0.03] transition-colors"
                             >
                               <td className="p-3 pl-4 font-mono text-neutral-400">#{stu.rollNo}</td>
                               <td className="p-3 font-mono text-cyan-400 font-semibold">
                                 {stu.adNo}
-                                {isThisUser && (
-                                  <span className="ml-1.5 px-1.5 py-0.5 rounded text-[9px] bg-blue-500/20 text-blue-300">You</span>
-                                )}
                               </td>
                               <td className="p-3 text-white font-medium">{stu.name}</td>
                               <td className="p-3 text-neutral-300">{stu.house}</td>
@@ -1027,16 +1021,6 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                     </table>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center space-y-2 pt-6 border-t">
-                <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center mx-auto text-neutral-400">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <h4 className="text-white font-bold text-sm">Class Personal Section Restricted</h4>
-                <p className="text-neutral-400 text-xs max-w-md mx-auto">
-                  The 27 Students class roster, private messaging with the Class Teacher, and class student credentials are strictly confidential and restricted to the Class Teacher (Usthad Fazlu Rehman Hudawi) and enrolled students of the 27 Students batch.
-                </p>
               </div>
             )}
 
