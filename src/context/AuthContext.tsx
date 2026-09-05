@@ -117,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return { 
         success: false, 
-        error: `Admission number "${cleanAdNo}" not found in the 27-student cohort. (e.g. 297, 325, 333, etc.)` 
+        error: 'Invalid admission number or student record not found.' 
       };
     }
 
@@ -173,7 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setIsLoading(false);
-    return { success: false, error: 'Invalid credentials. For Usthad login use username "fsl" and password "fsl".' };
+    return { success: false, error: 'Invalid username or password.' };
   };
 
   // 3. Login for Other All Students & Ustads
