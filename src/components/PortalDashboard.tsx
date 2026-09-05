@@ -315,7 +315,7 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                   </div>
                   <div>
                     <span className="text-[10px] font-mono uppercase text-neutral-400 block">Academic Class</span>
-                    <span className="text-sm font-semibold text-white">27-Student Cohort</span>
+                    <span className="text-sm font-semibold text-white">27 Students</span>
                   </div>
                   <div>
                     <span className="text-[10px] font-mono uppercase text-neutral-400 block">Department / House</span>
@@ -497,7 +497,7 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                 <div>
                   <h3 className="font-display font-bold text-base text-white flex items-center gap-2">
                     <GraduationCap className="w-4 h-4 text-cyan-400" />
-                    <span>The 27-Student Cohort Roster</span>
+                    <span>The 27 Students Roster</span>
                   </h3>
                   <p className="text-neutral-400 text-xs">
                     Academic Year 2026-27 • Username & Password matches each student&#39;s Admission Number
