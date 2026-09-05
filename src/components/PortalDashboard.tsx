@@ -335,10 +335,10 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                   <div>
                     <div className="flex items-center gap-2 text-amber-400 font-mono text-[11px] font-bold mb-1">
                       <Shield className="w-4 h-4" />
-                      <span>FACULTY OVERSIGHT & MENTORING PORTAL</span>
+                      <span>CLASS TEACHER OVERSIGHT & MENTORING PORTAL</span>
                     </div>
                     <p className="text-neutral-300 text-xs">
-                      Logged in as <span className="text-amber-200 font-semibold">Usthad Fazlu Rehman Hudawi</span> with faculty mentoring authority <span className="font-mono text-amber-300 font-semibold">[username: fsl]</span>. You have direct oversight over cohort notices, class records, and union broadcasts.
+                      Logged in as <span className="text-amber-200 font-semibold">Usthad Fazlu Rehman Hudawi</span> with faculty mentoring authority <span className="font-mono text-amber-300 font-semibold">[Class Teacher]</span>. You have direct oversight over cohort notices, class records, and union broadcasts.
                     </p>
                   </div>
                   <button
