@@ -102,7 +102,7 @@ export default function App() {
                 {activeSection === 'wings' && <Wings />}
                 {activeSection === 'gallery' && <Gallery />}
                 {activeSection === 'journey' && <Journey />}
-                {activeSection === 'events' && <Events />}
+                {activeSection === 'events' && <Events onOpenAuth={() => setIsAuthModalOpen(true)} />}
                 {activeSection === 'team' && <Team />}
                 {activeSection === 'contact' && <Contact />}
               </motion.div>
