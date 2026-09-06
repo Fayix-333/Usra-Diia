@@ -463,14 +463,14 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                           </span>
                         </div>
                         <h5 className="font-display font-bold text-white text-sm group-hover:text-amber-300 transition-colors">
-                          Union Event & Program Poster
+                          Union Event & Program (Direct Upload to Code)
                         </h5>
                         <p className="text-neutral-400 text-xs leading-relaxed">
-                          Add an official program poster with date, time, venue, description, and highlights directly into the Events code.
+                          Upload an official program poster directly into Events.tsx code — once uploaded, it is permanently stored in the code.
                         </p>
                       </div>
 
-                      {/* Option 2: Creative Gallery Poster */}
+                      {/* Option 2: Creative Gallery Image */}
                       <div
                         onClick={() => {
                           setShowGalleryPosterModal(true);
@@ -488,10 +488,10 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                           </span>
                         </div>
                         <h5 className="font-display font-bold text-white text-sm group-hover:text-cyan-300 transition-colors">
-                          Creative Vault / Artwork Poster
+                          Creative Vault / Artwork Image
                         </h5>
                         <p className="text-neutral-400 text-xs leading-relaxed">
-                          Add a visual artwork, brand identity, festival poster, or photo showcase directly into the Gallery code array.
+                          Add a visual artwork, brand identity, photograph, or showcase image directly into the Gallery code array.
                         </p>
                       </div>
                     </div>
