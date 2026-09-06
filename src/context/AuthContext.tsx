@@ -21,8 +21,12 @@ interface AuthContextType {
   students27List: Student27[];
   // Class 27 Exclusive Directives & Teacher Chat
   classMessages: ClassMessage[];
-  sendClassMessage: (message: string) => Promise<{ success: boolean; error?: string }>;
+  sendClassMessage: (message: string, autoExpire1Day?: boolean) => Promise<{ success: boolean; error?: string }>;
   replyClassMessage: (messageId: string, reply: string) => Promise<{ success: boolean; error?: string }>;
+  deleteClassMessage: (messageId: string) => Promise<{ success: boolean; error?: string }>;
+  purgeClassMessagesOlderThan1Day: () => Promise<{ success: boolean; count: number; error?: string }>;
+  autoPurge1DayEnabled: boolean;
+  setAutoPurge1DayEnabled: (enabled: boolean) => void;
   refreshClassMessages: () => Promise<void>;
   // Student Password Modification (Recorded to Firestore for Admin)
   changeStudentPassword: (adNo: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
@@ -43,6 +47,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(false);
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [classMessages, setClassMessages] = useState<ClassMessage[]>([]);
+  const [autoPurge1DayEnabled, setAutoPurge1DayState] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('usra_auto_purge_1day');
+      return stored === null ? true : stored === 'true'; // Enabled by default for convenient 1-day cleanup
+    } catch {
+      return true;
+    }
+  });
+
+  const setAutoPurge1DayEnabled = (enabled: boolean) => {
+    setAutoPurge1DayState(enabled);
+    try {
+      localStorage.setItem('usra_auto_purge_1day', enabled ? 'true' : 'false');
+    } catch (e) {
+      console.warn('LocalStorage error:', e);
+    }
+    if (enabled) {
+      purgeClassMessagesOlderThan1Day();
+    }
+  };
 
   // Load class messages between 27 students & Class Teacher
   const refreshClassMessages = async () => {
@@ -50,11 +74,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const q = query(collection(db, 'classMessages'), orderBy('createdAt', 'desc'));
       const snap = await getDocs(q);
       if (!snap.empty) {
-        const msgs: ClassMessage[] = snap.docs.map(d => ({
+        let msgs: ClassMessage[] = snap.docs.map(d => ({
           id: d.id,
           ...(d.data() as Omit<ClassMessage, 'id'>)
         }));
+
+        // Check 1-day retention auto-purge
+        const isAutoPurge = localStorage.getItem('usra_auto_purge_1day') !== 'false';
+        if (isAutoPurge) {
+          const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+          const expired = msgs.filter(m => {
+            const time = new Date(m.createdAt).getTime();
+            return !isNaN(time) && time < oneDayAgo;
+          });
+
+          if (expired.length > 0) {
+            for (const exp of expired) {
+              try {
+                await deleteDoc(doc(db, 'classMessages', exp.id));
+              } catch (e) {
+                console.warn('Auto-purge Firestore note:', exp.id, e);
+              }
+            }
+            msgs = msgs.filter(m => {
+              const time = new Date(m.createdAt).getTime();
+              return isNaN(time) || time >= oneDayAgo;
+            });
+          }
+        }
+
         setClassMessages(msgs);
+      } else {
+        setClassMessages([]);
       }
     } catch (err) {
       console.log('[Firestore] Class messages note:', err);
@@ -245,7 +296,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Send message to Class Teacher
-  const sendClassMessage = async (messageText: string): Promise<{ success: boolean; error?: string }> => {
+  const sendClassMessage = async (messageText: string, autoExpire1Day: boolean = true): Promise<{ success: boolean; error?: string }> => {
     if (!currentUser || currentUser.role !== 'student_27') {
       return { success: false, error: 'Only class students can send messages to the Class Teacher.' };
     }
@@ -261,6 +312,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       studentHouse: currentUser.department || 'Cordova',
       message: cleanText,
       status: 'unread',
+      autoExpire1Day: autoExpire1Day,
       createdAt: new Date().toISOString()
     };
 
@@ -274,6 +326,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setClassMessages(prev => [newMsg, ...prev]);
       return { success: true };
     }
+  };
+
+  // Delete an individual class message
+  const deleteClassMessage = async (messageId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await deleteDoc(doc(db, 'classMessages', messageId));
+    } catch (err) {
+      console.warn('[Firestore] Delete message error:', err);
+    }
+    setClassMessages(prev => prev.filter(m => m.id !== messageId));
+    return { success: true };
+  };
+
+  // Explicitly purge messages older than 1 day (24 hours)
+  const purgeClassMessagesOlderThan1Day = async (): Promise<{ success: boolean; count: number; error?: string }> => {
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const toDelete = classMessages.filter(m => {
+      const time = new Date(m.createdAt).getTime();
+      return !isNaN(time) && time < oneDayAgo;
+    });
+
+    if (toDelete.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    let deletedCount = 0;
+    for (const msg of toDelete) {
+      try {
+        await deleteDoc(doc(db, 'classMessages', msg.id));
+        deletedCount++;
+      } catch (err) {
+        console.warn('[Firestore] Purge message error:', err);
+      }
+    }
+    setClassMessages(prev => prev.filter(m => {
+      const time = new Date(m.createdAt).getTime();
+      return isNaN(time) || time >= oneDayAgo;
+    }));
+    return { success: true, count: deletedCount };
   };
 
   // Class Teacher reply to a student message
@@ -497,6 +588,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         classMessages,
         sendClassMessage,
         replyClassMessage,
+        deleteClassMessage,
+        purgeClassMessagesOlderThan1Day,
+        autoPurge1DayEnabled,
+        setAutoPurge1DayEnabled,
         refreshClassMessages,
         changeStudentPassword
       }}
