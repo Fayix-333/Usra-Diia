@@ -4,10 +4,12 @@ import {
   X, LogOut, Shield, GraduationCap, Users, Bell, Plus, Trash2, 
   Calendar, Award, CheckCircle, Search, Mail, ExternalLink, Sparkles, 
   AlertTriangle, Send, Check, KeyRound, MessageSquare, Reply, Lock,
-  Clock, ToggleLeft, ToggleRight, RotateCcw, Upload, Image as ImageIcon
+  Clock, ToggleLeft, ToggleRight, RotateCcw, Upload, Image as ImageIcon,
+  Crown, Edit3, Save, Sliders, Wrench, Database
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { db, collection, addDoc } from '../firebase';
+import { Student27 } from '../types';
 import PosterUploadModal from './PosterUploadModal';
 import GalleryPosterModal from './GalleryPosterModal';
 
@@ -26,6 +28,8 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
     addAnnouncement, 
     deleteAnnouncement, 
     students27List,
+    updateStudentDetails,
+    adminResetStudentPassword,
     classMessages,
     sendClassMessage,
     replyClassMessage,
@@ -36,7 +40,7 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
     changeStudentPassword
   } = useAuth();
   
-  // Announcement creator state (Usthad)
+  // Announcement creator state (Usthad / Web Creator Admin)
   const [showAddNotice, setShowAddNotice] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
@@ -69,7 +73,7 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
   const [purgeFeedback, setPurgeFeedback] = useState<string | null>(null);
   const [deletingMsgId, setDeletingMsgId] = useState<string | null>(null);
 
-  // Usthad Reply State
+  // Usthad / Admin Reply State
   const [replyTextMap, setReplyTextMap] = useState<Record<string, string>>({});
   const [isSendingReply, setIsSendingReply] = useState<string | null>(null);
 
@@ -82,12 +86,63 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
   // Student search
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Admin Student Editing State (Mohammed Fayiz KK / Lead Admin)
+  const [editingAdNo, setEditingAdNo] = useState<string | null>(null);
+  const [editPoints, setEditPoints] = useState<number>(0);
+  const [editAttendance, setEditAttendance] = useState<number>(100);
+  const [editRoleTitle, setEditRoleTitle] = useState<string>('');
+  const [adminActionFeedback, setAdminActionFeedback] = useState<string | null>(null);
+  
+  // Admin Password Reset Modal State
+  const [resetTargetStudent, setResetTargetStudent] = useState<Student27 | null>(null);
+  const [adminResetPassValue, setAdminResetPassValue] = useState('');
+  const [isResettingStudentPass, setIsResettingStudentPass] = useState(false);
+
   if (!isOpen || !currentUser) return null;
 
+  const isWebCreator = Boolean(
+    currentUser.adNo === '333' || 
+    currentUser.username === '333' || 
+    currentUser.isWebCreator === true || 
+    currentUser.email === 'mohammedfayizofficial@gmail.com'
+  );
   const isUsthad = currentUser.role === 'usthad_fsl';
-  const isStudent27 = currentUser.role === 'student_27';
+  const isAdmin = isWebCreator || isUsthad || currentUser.isAdmin === true;
+  const isStudent27 = currentUser.role === 'student_27' || Boolean(currentUser.adNo);
   const currentStudentData = isStudent27 ? students27List.find(s => s.adNo === currentUser.adNo) : null;
   const myClassMessages = classMessages.filter(m => m.studentAdNo === currentUser.adNo);
+
+  const handleStartEditStudent = (student: Student27) => {
+    setEditingAdNo(student.adNo);
+    setEditPoints(student.zehnuthPoints ?? 0);
+    setEditAttendance(student.attendance);
+    setEditRoleTitle(student.roleTitle || '');
+  };
+
+  const handleSaveStudentEdit = async (adNo: string) => {
+    await updateStudentDetails(adNo, {
+      zehnuthPoints: Number(editPoints),
+      attendance: Number(editAttendance),
+      roleTitle: editRoleTitle.trim()
+    });
+    setEditingAdNo(null);
+    setAdminActionFeedback(`Updated records for student Ad No: ${adNo}`);
+    setTimeout(() => setAdminActionFeedback(null), 3500);
+  };
+
+  const handleAdminResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetTargetStudent || !adminResetPassValue.trim()) return;
+    setIsResettingStudentPass(true);
+    const res = await adminResetStudentPassword(resetTargetStudent.adNo, adminResetPassValue.trim());
+    setIsResettingStudentPass(false);
+    if (res.success) {
+      setAdminActionFeedback(`Password for ${resetTargetStudent.name} (Ad No. ${resetTargetStudent.adNo}) successfully set to: ${adminResetPassValue.trim()}`);
+      setResetTargetStudent(null);
+      setAdminResetPassValue('');
+      setTimeout(() => setAdminActionFeedback(null), 5000);
+    }
+  };
 
   const ONE_DAY_MS = 24 * 60 * 60 * 1000;
   const expiredCountAll = classMessages.filter(m => {
@@ -311,24 +366,28 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
           <div className="p-6 pb-4 border-b border-white/10 flex flex-wrap items-center justify-between gap-4 bg-neutral-950/70">
             <div className="flex items-center gap-3">
               <div className={`w-11 h-11 rounded-2xl flex items-center justify-center border shadow-lg ${
-                isUsthad 
+                isWebCreator
+                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 ring-2 ring-amber-400/30'
+                  : isUsthad 
                   ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' 
                   : isStudent27 
                   ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
                   : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
               }`}>
-                {isUsthad ? <Shield className="w-5 h-5" /> : isStudent27 ? <GraduationCap className="w-5 h-5" /> : <Users className="w-5 h-5" />}
+                {isWebCreator ? <Crown className="w-5 h-5 text-amber-300" /> : isUsthad ? <Shield className="w-5 h-5" /> : isStudent27 ? <GraduationCap className="w-5 h-5" /> : <Users className="w-5 h-5" />}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-widest font-bold border ${
-                    isUsthad
+                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-widest font-bold border ${
+                    isWebCreator
+                      ? 'bg-gradient-to-r from-amber-500/30 to-yellow-500/30 text-amber-300 border-amber-400/60 shadow-[0_0_12px_rgba(245,158,11,0.25)]'
+                      : isUsthad
                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                       : isStudent27
                       ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
                       : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
                   }`}>
-                    {isUsthad ? 'Class Teacher Executive' : isStudent27 ? `27 Students • Ad No: ${currentUser.adNo}` : 'Campus Member'}
+                    {isWebCreator ? 'WEB CREATOR & LEAD ADMIN • AD NO: 333' : isUsthad ? 'Class Teacher Executive' : isStudent27 ? `27 Students • Ad No: ${currentUser.adNo}` : 'Campus Member'}
                   </span>
                   <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -342,7 +401,7 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Add Poster Directly to Code button */}
+              {/* Upload poster button */}
               <button
                 onClick={() => setShowPosterSelector(prev => !prev)}
                 className={`px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all border cursor-pointer ${
@@ -350,11 +409,11 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                     ? 'bg-amber-500 text-black border-amber-400 shadow-lg shadow-amber-500/25 font-bold'
                     : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
                 }`}
-                title="Add poster directly into application code"
+                title="Upload union event or gallery poster"
               >
                 <Upload className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Add Poster to Code</span>
-                <span className="sm:hidden">Posters</span>
+                <span className="hidden sm:inline">Upload poster</span>
+                <span className="sm:hidden">Upload</span>
               </button>
 
               {/* Change Password quick button for 27 Students */}
@@ -932,6 +991,67 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
               </div>
             )}
 
+            {/* WEB CREATOR & LEAD ADMIN MASTER CONTROL PORTAL (MOHAMMED FAYIZ KK - AD NO. 333) */}
+            {isWebCreator && (
+              <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-950/40 via-yellow-950/25 to-neutral-900/80 border border-amber-500/40 relative overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+                  <div>
+                    <div className="flex items-center gap-2 text-amber-300 font-mono text-xs font-bold mb-1.5">
+                      <Crown className="w-4 h-4 text-amber-400" />
+                      <span className="tracking-wider uppercase">WEB CREATOR & LEAD ADMIN MASTER CONTROL SUITE</span>
+                    </div>
+                    <h3 className="text-xl font-display font-black text-white flex flex-wrap items-center gap-2">
+                      <span>Mohammed Fayiz KK</span>
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold border border-amber-500/40">
+                        Ad No. 333 • Lead Admin & Architect
+                      </span>
+                    </h3>
+                    <p className="text-neutral-300 text-xs mt-1.5 max-w-2xl leading-relaxed">
+                      You hold supreme administrative and creative control: edit cohort Zehnuth points, live attendance, and union designations; perform instant student password resets; broadcast official directives; moderate batch queries; and upload event posters.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 self-stretch md:self-auto">
+                    <button
+                      onClick={() => setShowAddNotice(!showAddNotice)}
+                      className="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-lg shadow-amber-500/20"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>{showAddNotice ? 'Close Directive Form' : 'Broadcast Directive'}</span>
+                    </button>
+                    <button
+                      onClick={() => setShowPosterSelector(prev => !prev)}
+                      className="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-amber-300 border border-amber-500/30 font-mono text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Upload className="w-4 h-4 text-amber-400" />
+                      <span>Upload poster</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Status indicators */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/10 text-xs font-mono">
+                  <div className="p-2.5 rounded-xl bg-black/40 border border-white/5">
+                    <span className="text-neutral-400 block text-[10px] uppercase">Roster Control</span>
+                    <span className="text-emerald-400 font-bold">27 Students Full Edit</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-black/40 border border-white/5">
+                    <span className="text-neutral-400 block text-[10px] uppercase">Points & Standing</span>
+                    <span className="text-amber-300 font-bold">Live Read / Write</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-black/40 border border-white/5">
+                    <span className="text-neutral-400 block text-[10px] uppercase">Directive Broadcasting</span>
+                    <span className="text-cyan-300 font-bold">Sync to Database</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-black/40 border border-white/5">
+                    <span className="text-neutral-400 block text-[10px] uppercase">Student Password Reset</span>
+                    <span className="text-purple-300 font-bold">Instant Activation</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {isUsthad && (
               <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-900/30 via-yellow-900/15 to-neutral-900/40 border border-amber-500/25 relative overflow-hidden">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -955,8 +1075,8 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
               </div>
             )}
 
-            {/* USTHAD NOTICE POSTING FORM */}
-            {isUsthad && showAddNotice && (
+            {/* DIRECTIVE POSTING FORM (USTHAD & WEB CREATOR ADMIN) */}
+            {(isUsthad || isWebCreator) && showAddNotice && (
               <motion.form
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -966,7 +1086,9 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
               >
                 <div className="flex items-center justify-between border-b border-white/5 pb-2">
                   <h3 className="font-display font-bold text-sm text-white">Create Official Directive (Saves to Firestore Database)</h3>
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-amber-400">Usthad Directive</span>
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-amber-400">
+                    {isWebCreator ? 'Admin Directive' : 'Usthad Directive'}
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1027,8 +1149,8 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
               </motion.form>
             )}
 
-            {/* CLASS TEACHER DIRECT STUDENT MESSAGES INBOX */}
-            {isUsthad && (
+            {/* DIRECT STUDENT MESSAGES INBOX (USTHAD & WEB CREATOR ADMIN) */}
+            {(isUsthad || isWebCreator) && (
               <div className="p-6 rounded-2xl bg-neutral-900/80 border border-amber-500/30 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
                   <div className="flex items-center gap-2.5">
@@ -1250,7 +1372,7 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                           <span className="font-mono text-[9px] text-neutral-500">
                             {new Date(item.createdAt).toLocaleDateString()}
                           </span>
-                          {isUsthad && (
+                          {(isUsthad || isWebCreator) && (
                             <button
                               onClick={() => deleteAnnouncement(item.id)}
                               className="p-1 rounded text-neutral-500 hover:text-rose-400 transition-colors cursor-pointer"
@@ -1273,24 +1395,32 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
               ) : (
                 <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center space-y-1">
                   <p className="text-neutral-400 text-xs font-mono">No active directives or announcements currently posted.</p>
-                  {isUsthad && (
-                    <p className="text-amber-400/80 text-[11px] font-mono">Click &quot;Post New Notice&quot; above to publish an official cohort directive.</p>
+                  {(isUsthad || isWebCreator) && (
+                    <p className="text-amber-400/80 text-[11px] font-mono">Click &quot;Broadcast Directive&quot; above to publish an official cohort directive.</p>
                   )}
                 </div>
               )}
             </div>
 
-            {/* 27 STUDENTS ROSTER (RESTRICTED EXCLUSIVELY TO CLASS TEACHER) */}
-            {isUsthad && (
-              <div className="space-y-3 pt-4 border-t border-white/5">
+            {/* 27 STUDENTS ROSTER (ACCESSIBLE TO CLASS TEACHER & WEB CREATOR ADMIN) */}
+            {(isUsthad || isWebCreator) && (
+              <div className="space-y-4 pt-4 border-t border-white/5">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-display font-bold text-base text-white flex items-center gap-2">
                       <GraduationCap className="w-4 h-4 text-cyan-400" />
                       <span>The 27 Students Class Roster</span>
+                      {isWebCreator && (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          Admin Management Active
+                        </span>
+                      )}
                     </h3>
                     <p className="text-neutral-400 text-xs">
-                      Class Teacher Oversight • Academic Year 2026-27 • 27 Students Records
+                      {isWebCreator 
+                        ? 'Chief Administrator & Web Creator Control • Edit Points, Attendance, Designation & Passwords'
+                        : 'Class Teacher Oversight • Academic Year 2026-27 • 27 Students Records'
+                      }
                     </p>
                   </div>
                   
@@ -1307,6 +1437,13 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                   </div>
                 </div>
 
+                {adminActionFeedback && (
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{adminActionFeedback}</span>
+                  </div>
+                )}
+
                 {/* Table / Grid */}
                 <div className="rounded-2xl border border-white/5 overflow-hidden bg-white/[0.01]">
                   <div className="overflow-x-auto">
@@ -1319,27 +1456,120 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                           <th className="p-3">House</th>
                           <th className="p-3">Union Designation</th>
                           <th className="p-3 text-center">Zehnuth Points</th>
-                          <th className="p-3 text-right pr-4">Attendance</th>
+                          <th className="p-3 text-right">Attendance</th>
+                          {isWebCreator && (
+                            <th className="p-3 text-right pr-4">Admin Controls</th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5 font-sans">
                         {filteredStudents.map((stu) => {
+                          const isEditing = editingAdNo === stu.adNo;
                           return (
                             <tr
                               key={stu.adNo}
-                              className="hover:bg-white/[0.03] transition-colors"
+                              className={`transition-colors ${isEditing ? 'bg-amber-500/[0.06]' : 'hover:bg-white/[0.03]'}`}
                             >
                               <td className="p-3 pl-4 font-mono text-neutral-400">#{stu.rollNo}</td>
                               <td className="p-3 font-mono text-cyan-400 font-semibold">
                                 {stu.adNo}
                               </td>
-                              <td className="p-3 text-white font-medium">{stu.name}</td>
-                              <td className="p-3 text-neutral-300">{stu.house}</td>
-                              <td className="p-3 text-neutral-400 text-[11px]">{stu.roleTitle || 'Class Member'}</td>
-                              <td className="p-3 text-center font-mono font-bold text-amber-400">
-                                {stu.zehnuthPoints ?? 0} pts
+                              <td className="p-3 text-white font-medium">
+                                <div className="flex items-center gap-1.5">
+                                  <span>{stu.name}</span>
+                                  {stu.adNo === '333' && (
+                                    <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                      Creator
+                                    </span>
+                                  )}
+                                </div>
                               </td>
-                              <td className="p-3 text-right pr-4 font-mono text-emerald-400">{stu.attendance}%</td>
+                              <td className="p-3 text-neutral-300">{stu.house}</td>
+                              <td className="p-3 text-neutral-300">
+                                {isEditing ? (
+                                  <input
+                                    type="text"
+                                    value={editRoleTitle}
+                                    onChange={(e) => setEditRoleTitle(e.target.value)}
+                                    placeholder="e.g. IT & Art Wing"
+                                    className="px-2 py-1 rounded bg-black/60 border border-white/20 text-white text-xs focus:outline-none focus:border-amber-400 w-full min-w-[140px]"
+                                  />
+                                ) : (
+                                  <span className="text-neutral-400 text-[11px]">{stu.roleTitle || 'Class Member'}</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-center font-mono">
+                                {isEditing ? (
+                                  <input
+                                    type="number"
+                                    value={editPoints}
+                                    onChange={(e) => setEditPoints(Number(e.target.value))}
+                                    className="w-20 px-2 py-1 rounded bg-black/60 border border-white/20 text-amber-400 font-bold text-center text-xs focus:outline-none focus:border-amber-400"
+                                  />
+                                ) : (
+                                  <span className="font-bold text-amber-400">{stu.zehnuthPoints ?? 0} pts</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-right font-mono">
+                                {isEditing ? (
+                                  <div className="inline-flex items-center gap-1 justify-end">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      value={editAttendance}
+                                      onChange={(e) => setEditAttendance(Number(e.target.value))}
+                                      className="w-16 px-2 py-1 rounded bg-black/60 border border-white/20 text-emerald-400 font-bold text-center text-xs focus:outline-none focus:border-amber-400"
+                                    />
+                                    <span className="text-neutral-400 text-xs">%</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-emerald-400">{stu.attendance}%</span>
+                                )}
+                              </td>
+                              {isWebCreator && (
+                                <td className="p-3 text-right pr-4">
+                                  {isEditing ? (
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <button
+                                        onClick={() => handleSaveStudentEdit(stu.adNo)}
+                                        className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold text-[10px] flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
+                                      >
+                                        <Save className="w-3 h-3" />
+                                        <span>Save</span>
+                                      </button>
+                                      <button
+                                        onClick={() => setEditingAdNo(null)}
+                                        className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-400 text-[10px] font-mono cursor-pointer transition-colors"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <button
+                                        onClick={() => handleStartEditStudent(stu)}
+                                        className="px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono flex items-center gap-1 cursor-pointer transition-colors"
+                                        title="Edit points, attendance & role"
+                                      >
+                                        <Edit3 className="w-3 h-3 text-amber-400" />
+                                        <span>Edit</span>
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setResetTargetStudent(stu);
+                                          setAdminResetPassValue('');
+                                        }}
+                                        className="px-2 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-mono flex items-center gap-1 cursor-pointer transition-colors"
+                                        title="Reset password directly"
+                                      >
+                                        <KeyRound className="w-3 h-3 text-purple-400" />
+                                        <span>Pass</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </td>
+                              )}
                             </tr>
                           );
                         })}
@@ -1353,6 +1583,85 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
           </div>
         </motion.div>
       </div>
+
+      {/* Admin Student Password Reset Modal (Mohammed Fayiz KK) */}
+      <AnimatePresence>
+        {resetTargetStudent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setResetTargetStudent(null)}
+              className="fixed inset-0 bg-black/85 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-md bg-neutral-950 border border-purple-500/40 rounded-3xl p-6 shadow-2xl z-10 space-y-4"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-5 h-5 text-purple-400" />
+                  <h3 className="font-display font-bold text-white text-base">Admin Password Reset</h3>
+                </div>
+                <button
+                  onClick={() => setResetTargetStudent(null)}
+                  className="p-1 rounded-lg text-neutral-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div>
+                <p className="text-xs text-neutral-300">
+                  Resetting credentials for: <strong className="text-white">{resetTargetStudent.name}</strong>
+                </p>
+                <p className="text-[11px] font-mono text-cyan-400 mt-0.5">
+                  Roll #{resetTargetStudent.rollNo} • Admission No: {resetTargetStudent.adNo}
+                </p>
+              </div>
+
+              <form onSubmit={handleAdminResetPassword} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-mono uppercase text-neutral-400 block mb-1">
+                    New Password
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={adminResetPassValue}
+                    onChange={(e) => setAdminResetPassValue(e.target.value)}
+                    placeholder="Enter new password (e.g. secret123)"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-purple-500/50"
+                  />
+                  <span className="text-[10px] text-neutral-500 mt-1 block">
+                    This password will be immediately stored in Firebase Firestore and activated for student login.
+                  </span>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setResetTargetStudent(null)}
+                    className="px-4 py-2 rounded-xl bg-white/5 text-neutral-400 text-xs font-mono cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isResettingStudentPass || adminResetPassValue.trim().length < 3}
+                    className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white font-mono text-xs font-bold uppercase tracking-wider cursor-pointer"
+                  >
+                    {isResettingStudentPass ? 'Updating...' : 'Set New Password'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Union Events Poster Code Modal */}
       <PosterUploadModal
