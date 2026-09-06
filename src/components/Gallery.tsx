@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Maximize2, X, Image as ImageIcon, Film, Palette, Zap, Loader2 } from 'lucide-react';
+import { Maximize2, X, Image as ImageIcon, Film, Palette, Zap, Loader2, Upload } from 'lucide-react';
 import { GalleryItem } from '../types';
 import LazyGalleryImage from './LazyGalleryImage';
+import GalleryPosterModal from './GalleryPosterModal';
 
-const galleryItems: GalleryItem[] = [
+export const initialGalleryItems: GalleryItem[] = [
   {
     id: 'gal-1',
     title: 'The Electric Prism Project',
@@ -58,13 +59,49 @@ const galleryItems: GalleryItem[] = [
 const categories = ['All', 'Photography', 'Design', 'Cinema', 'Events'];
 
 export default function Gallery() {
+  const [items, setItems] = useState<GalleryItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('usra_custom_gallery');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const existingIds = new Set(initialGalleryItems.map(i => i.id));
+            const newItems = parsed.filter(i => !existingIds.has(i.id));
+            return [...newItems, ...initialGalleryItems];
+          }
+        }
+      } catch (e) {
+        console.warn('Could not read custom gallery items from localStorage:', e);
+      }
+    }
+    return initialGalleryItems;
+  });
+
   const [activeCategory, setActiveCategory] = useState('All');
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
   const [lightboxLoaded, setLightboxLoaded] = useState(false);
+  const [isPosterModalOpen, setIsPosterModalOpen] = useState(false);
+
+  const handlePosterAdded = (newPoster: GalleryItem) => {
+    setItems((prev) => {
+      const filtered = prev.filter((i) => i.id !== newPoster.id);
+      const updated = [newPoster, ...filtered];
+      try {
+        const customOnly = updated.filter(
+          (item) => !initialGalleryItems.some((init) => init.id === item.id)
+        );
+        localStorage.setItem('usra_custom_gallery', JSON.stringify(customOnly));
+      } catch (e) {
+        console.warn('Could not persist gallery to localStorage:', e);
+      }
+      return updated;
+    });
+  };
 
   const filteredItems = activeCategory === 'All'
-    ? galleryItems
-    : galleryItems.filter(item => item.category === activeCategory);
+    ? items
+    : items.filter(item => item.category === activeCategory);
 
   const handleOpenLightbox = (item: GalleryItem) => {
     setLightboxLoaded(false);
@@ -95,7 +132,7 @@ export default function Gallery() {
           <div className="h-1 bg-gradient-to-r from-blue-600 to-cyan-400 w-20 mx-auto mt-6 rounded-full" />
         </div>
 
-        {/* Filter Capsule Group */}
+        {/* Filter Capsule Group & Direct Code Injection Button */}
         <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3 mb-16">
           {categories.map((cat) => {
             const isActive = activeCategory === cat;
@@ -123,6 +160,15 @@ export default function Gallery() {
               </button>
             );
           })}
+
+          <button
+            onClick={() => setIsPosterModalOpen(true)}
+            className="group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-blue-500/40 bg-gradient-to-r from-blue-600/25 via-cyan-600/20 to-blue-600/25 hover:from-blue-600/40 hover:via-cyan-600/30 hover:to-blue-600/40 text-white text-xs font-semibold tracking-wide transition-all duration-300 cursor-pointer shadow-[0_0_20px_rgba(59,130,246,0.25)] hover:shadow-[0_0_25px_rgba(59,130,246,0.45)] hover:border-blue-400/60"
+          >
+            <Upload className="w-4 h-4 text-cyan-400 transition-transform group-hover:-translate-y-0.5" />
+            <span>Add Poster to Code</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+          </button>
         </div>
 
         {/* Masonry-Style Grid */}
@@ -260,6 +306,13 @@ export default function Gallery() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Direct Poster Code Injection Modal */}
+      <GalleryPosterModal
+        isOpen={isPosterModalOpen}
+        onClose={() => setIsPosterModalOpen(false)}
+        onPosterAdded={handlePosterAdded}
+      />
     </section>
   );
 }
