@@ -4,10 +4,12 @@ import {
   X, LogOut, Shield, GraduationCap, Users, Bell, Plus, Trash2, 
   Calendar, Award, CheckCircle, Search, Mail, ExternalLink, Sparkles, 
   AlertTriangle, Send, Check, KeyRound, MessageSquare, Reply, Lock,
-  Clock, ToggleLeft, ToggleRight, RotateCcw
+  Clock, ToggleLeft, ToggleRight, RotateCcw, Upload, Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { db, collection, addDoc } from '../firebase';
+import PosterUploadModal from './PosterUploadModal';
+import GalleryPosterModal from './GalleryPosterModal';
 
 interface PortalDashboardProps {
   isOpen: boolean;
@@ -70,6 +72,12 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
   // Usthad Reply State
   const [replyTextMap, setReplyTextMap] = useState<Record<string, string>>({});
   const [isSendingReply, setIsSendingReply] = useState<string | null>(null);
+
+  // Direct Poster Code Injection State
+  const [showPosterSelector, setShowPosterSelector] = useState(false);
+  const [showEventPosterModal, setShowEventPosterModal] = useState(false);
+  const [showGalleryPosterModal, setShowGalleryPosterModal] = useState(false);
+  const [posterAddedFeedback, setPosterAddedFeedback] = useState<string | null>(null);
 
   // Student search
   const [searchQuery, setSearchQuery] = useState('');
@@ -334,6 +342,21 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Add Poster Directly to Code button */}
+              <button
+                onClick={() => setShowPosterSelector(prev => !prev)}
+                className={`px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all border cursor-pointer ${
+                  showPosterSelector
+                    ? 'bg-amber-500 text-black border-amber-400 shadow-lg shadow-amber-500/25 font-bold'
+                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
+                }`}
+                title="Add poster directly into application code"
+              >
+                <Upload className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Add Poster to Code</span>
+                <span className="sm:hidden">Posters</span>
+              </button>
+
               {/* Change Password quick button for 27 Students */}
               {isStudent27 && (
                 <button
@@ -385,6 +408,97 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
 
           {/* Scrollable Dashboard Body */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+            {/* DIRECT POSTER CODE INJECTION PANEL */}
+            <AnimatePresence>
+              {showPosterSelector && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-950/30 via-neutral-900/90 to-amber-950/20 border border-amber-500/40 space-y-4 shadow-xl">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                          <Upload className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="font-display font-bold text-white text-sm flex items-center gap-2">
+                            <span>Direct Poster Code Injector</span>
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              Instant Source Code Update
+                            </span>
+                          </h4>
+                          <p className="text-neutral-400 text-xs font-mono">
+                            Select which section code file you would like to append the poster into:
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowPosterSelector(false)}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Option 1: Events & Union Programs Poster */}
+                      <div
+                        onClick={() => {
+                          setShowEventPosterModal(true);
+                          setShowPosterSelector(false);
+                        }}
+                        className="p-4 rounded-xl bg-white/[0.03] hover:bg-amber-500/10 border border-white/10 hover:border-amber-500/40 transition-all cursor-pointer group space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-mono text-cyan-400 font-bold flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>src/components/Events.tsx</span>
+                          </span>
+                          <span className="text-[10px] font-mono bg-cyan-500/10 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/20">
+                            Union Event
+                          </span>
+                        </div>
+                        <h5 className="font-display font-bold text-white text-sm group-hover:text-amber-300 transition-colors">
+                          Union Event & Program Poster
+                        </h5>
+                        <p className="text-neutral-400 text-xs leading-relaxed">
+                          Add an official program poster with date, time, venue, description, and highlights directly into the Events code.
+                        </p>
+                      </div>
+
+                      {/* Option 2: Creative Gallery Poster */}
+                      <div
+                        onClick={() => {
+                          setShowGalleryPosterModal(true);
+                          setShowPosterSelector(false);
+                        }}
+                        className="p-4 rounded-xl bg-white/[0.03] hover:bg-cyan-500/10 border border-white/10 hover:border-cyan-500/40 transition-all cursor-pointer group space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-mono text-cyan-400 font-bold flex items-center gap-1.5">
+                            <ImageIcon className="w-3.5 h-3.5" />
+                            <span>src/components/Gallery.tsx</span>
+                          </span>
+                          <span className="text-[10px] font-mono bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">
+                            Creative Vault
+                          </span>
+                        </div>
+                        <h5 className="font-display font-bold text-white text-sm group-hover:text-cyan-300 transition-colors">
+                          Creative Vault / Artwork Poster
+                        </h5>
+                        <p className="text-neutral-400 text-xs leading-relaxed">
+                          Add a visual artwork, brand identity, festival poster, or photo showcase directly into the Gallery code array.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* DIRECT MESSAGE PANEL TO usradiia9@gmail.com */}
             <AnimatePresence>
@@ -1239,6 +1353,26 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
           </div>
         </motion.div>
       </div>
+
+      {/* Union Events Poster Code Modal */}
+      <PosterUploadModal
+        isOpen={showEventPosterModal}
+        onClose={() => setShowEventPosterModal(false)}
+        onEventAdded={() => {
+          setPosterAddedFeedback('Event poster added directly into src/components/Events.tsx!');
+          setTimeout(() => setPosterAddedFeedback(null), 4000);
+        }}
+      />
+
+      {/* Creative Gallery Poster Code Modal */}
+      <GalleryPosterModal
+        isOpen={showGalleryPosterModal}
+        onClose={() => setShowGalleryPosterModal(false)}
+        onPosterAdded={() => {
+          setPosterAddedFeedback('Gallery poster added directly into src/components/Gallery.tsx!');
+          setTimeout(() => setPosterAddedFeedback(null), 4000);
+        }}
+      />
     </AnimatePresence>
   );
 }
