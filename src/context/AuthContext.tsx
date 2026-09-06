@@ -8,6 +8,11 @@ import { signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth';
 interface AuthContextType {
   currentUser: AuthUser | null;
   isLoading: boolean;
+  isWebCreator: boolean;
+  isAdmin: boolean;
+  isStudent27: boolean;
+  isUsthad: boolean;
+  canUploadPoster: boolean;
   loginStudent27: (adNo: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   loginUsthadFsl: (username: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   loginGeneral: (credentials: { idOrEmail: string; pass: string; role: 'student_general' | 'usthad_general'; name?: string }) => Promise<{ success: boolean; error?: string }>;
@@ -19,6 +24,8 @@ interface AuthContextType {
   addAnnouncement: (title: string, content: string, priority: 'normal' | 'urgent' | 'info', target: 'all' | 'students_27' | 'usthads') => Promise<void>;
   deleteAnnouncement: (id: string) => Promise<void>;
   students27List: Student27[];
+  updateStudentDetails: (adNo: string, updates: Partial<Student27>) => Promise<void>;
+  adminResetStudentPassword: (adNo: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   // Class 27 Exclusive Directives & Teacher Chat
   classMessages: ClassMessage[];
   sendClassMessage: (message: string, autoExpire1Day?: boolean) => Promise<{ success: boolean; error?: string }>;
@@ -38,10 +45,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem('usra_active_user');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const u = JSON.parse(saved);
+        if (u.adNo === '333' || u.username === '333') {
+          u.isAdmin = true;
+          u.isWebCreator = true;
+        }
+        return u;
+      }
+      return null;
     } catch {
       return null;
     }
+  });
+
+  const [studentsList, setStudentsList] = useState<Student27[]>(() => {
+    try {
+      const overridesRaw = localStorage.getItem('usra_students_roster_overrides');
+      if (overridesRaw) {
+        const overrides = JSON.parse(overridesRaw);
+        return STUDENTS_27_ROSTER.map(s => overrides[s.adNo] ? { ...s, ...overrides[s.adNo] } : s);
+      }
+    } catch (e) {
+      console.warn('Roster local overrides note:', e);
+    }
+    return STUDENTS_27_ROSTER;
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -235,6 +263,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
+    const isFayizAdmin = matchedStudent.adNo === '333';
     const studentUser: AuthUser = {
       id: `student-27-${matchedStudent.adNo}`,
       username: matchedStudent.adNo,
@@ -243,6 +272,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       adNo: matchedStudent.adNo,
       batch: '27 Students (Session 2026-27)',
       department: matchedStudent.house,
+      isAdmin: isFayizAdmin,
+      isWebCreator: isFayizAdmin,
       createdAt: new Date().toISOString()
     };
 
@@ -570,11 +601,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateStudentDetails = async (adNo: string, updates: Partial<Student27>) => {
+    setStudentsList(prev => {
+      const updated = prev.map(s => s.adNo === adNo ? { ...s, ...updates } : s);
+      try {
+        const overridesRaw = localStorage.getItem('usra_students_roster_overrides');
+        const overrides = overridesRaw ? JSON.parse(overridesRaw) : {};
+        overrides[adNo] = { ...(overrides[adNo] || {}), ...updates };
+        localStorage.setItem('usra_students_roster_overrides', JSON.stringify(overrides));
+      } catch (e) {
+        console.warn('Roster local storage write error:', e);
+      }
+      return updated;
+    });
+
+    try {
+      await setDoc(doc(db, 'studentOverrides', adNo), {
+        adNo,
+        ...updates,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Firestore updateStudentDetails note:', e);
+    }
+  };
+
+  const adminResetStudentPassword = async (adNo: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    return changeStudentPassword(adNo, newPassword);
+  };
+
+  const isWebCreator = currentUser?.adNo === '333' || currentUser?.username === '333' || currentUser?.isWebCreator === true || currentUser?.email === 'mohammedfayizofficial@gmail.com';
+  const isAdmin = isWebCreator || currentUser?.role === 'usthad_fsl' || currentUser?.isAdmin === true;
+  const isStudent27 = currentUser?.role === 'student_27' || !!currentUser?.adNo;
+  const isUsthad = currentUser?.role === 'usthad_fsl' || currentUser?.role === 'usthad_general';
+  const canUploadPoster = isStudent27 || isUsthad || isWebCreator || isAdmin;
+
   return (
     <AuthContext.Provider
       value={{
         currentUser,
         isLoading,
+        isWebCreator,
+        isAdmin,
+        isStudent27,
+        isUsthad,
+        canUploadPoster,
         loginStudent27,
         loginUsthadFsl,
         loginGeneral,
@@ -584,7 +655,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         announcements,
         addAnnouncement,
         deleteAnnouncement,
-        students27List: STUDENTS_27_ROSTER,
+        students27List: studentsList,
+        updateStudentDetails,
+        adminResetStudentPassword,
         classMessages,
         sendClassMessage,
         replyClassMessage,
