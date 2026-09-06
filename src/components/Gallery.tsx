@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Maximize2, X, Image as ImageIcon, Film, Palette, Zap } from 'lucide-react';
+import { Maximize2, X, Image as ImageIcon, Film, Palette, Zap, Loader2 } from 'lucide-react';
 import { GalleryItem } from '../types';
+import LazyGalleryImage from './LazyGalleryImage';
 
 const galleryItems: GalleryItem[] = [
   {
@@ -59,10 +60,16 @@ const categories = ['All', 'Photography', 'Design', 'Cinema', 'Events'];
 export default function Gallery() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+  const [lightboxLoaded, setLightboxLoaded] = useState(false);
 
   const filteredItems = activeCategory === 'All'
     ? galleryItems
     : galleryItems.filter(item => item.category === activeCategory);
+
+  const handleOpenLightbox = (item: GalleryItem) => {
+    setLightboxLoaded(false);
+    setSelectedItem(item);
+  };
 
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
@@ -141,14 +148,19 @@ export default function Gallery() {
                   delay: index * 0.03
                 }}
                 className="break-inside-avoid relative rounded-3xl overflow-hidden border border-white/5 bg-neutral-950/40 group cursor-pointer"
-                onClick={() => setSelectedItem(item)}
+                onClick={() => handleOpenLightbox(item)}
               >
-                {/* Image */}
-                <img
+                {/* Lazy-Loaded Gallery Image */}
+                <LazyGalleryImage
                   src={item.imageUrl}
                   alt={item.title}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  aspectRatio={
+                    item.category === 'Cinema'
+                      ? 'aspect-[16/9]'
+                      : item.category === 'Design'
+                      ? 'aspect-[4/5]'
+                      : 'aspect-[4/3]'
+                  }
                 />
 
                 {/* Dark Vignette Overlay on Base */}
@@ -197,13 +209,24 @@ export default function Gallery() {
                 className="relative max-w-4xl w-full rounded-3xl overflow-hidden border border-white/10 bg-neutral-950 shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Lightbox Image */}
+                {/* Lightbox Image with Lazy & Progressive Loading */}
                 <div className="relative aspect-video max-h-[70vh] bg-black flex items-center justify-center overflow-hidden">
+                  {!lightboxLoaded && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-10 gap-3">
+                      <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                      <span className="text-[11px] font-mono text-neutral-400 tracking-wider uppercase">Loading Full Frame</span>
+                    </div>
+                  )}
                   <img
                     src={selectedItem.imageUrl}
                     alt={selectedItem.title}
+                    loading="lazy"
+                    decoding="async"
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-contain"
+                    onLoad={() => setLightboxLoaded(true)}
+                    className={`w-full h-full object-contain transition-opacity duration-500 ease-out ${
+                      lightboxLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
                   />
                   {/* Subtle radial center highlight */}
                   <div className="absolute inset-0 bg-radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.6)_100%) pointer-events-none" />
