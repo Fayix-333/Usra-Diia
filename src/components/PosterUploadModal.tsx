@@ -29,7 +29,7 @@ interface PosterUploadModalProps {
 
 export default function PosterUploadModal({ isOpen, onClose, onEventAdded }: PosterUploadModalProps) {
   // Image input method: 'file' | 'url'
-  const [imageMode, setImageMode] = useState<'url' | 'file'>('url');
+  const [imageMode, setImageMode] = useState<'file' | 'url'>('file');
   const [imageUrl, setImageUrl] = useState('');
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -254,9 +254,9 @@ ${newEvent.highlights?.map((h) => `      ${JSON.stringify(h)}`).join(',\n') || '
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-display font-bold text-lg text-white">Poster Upload Studio</h3>
+              <h3 className="font-display font-bold text-lg text-white">Direct Upload to Code</h3>
               <p className="text-xs text-neutral-400">
-                Upload your union posters with full details — automatically saved into the code
+                Upload event posters and announcements — once uploaded, it is automatically stored in the code (src/components/Events.tsx)
               </p>
             </div>
           </div>
@@ -278,13 +278,12 @@ ${newEvent.highlights?.map((h) => `      ${JSON.stringify(h)}`).join(',\n') || '
               </div>
 
               <div>
-                <h4 className="font-display font-bold text-2xl text-white mb-2">Poster Added to Code & Live Events!</h4>
+                <h4 className="font-display font-bold text-2xl text-white mb-2">Stored Directly in Code & Live Events!</h4>
                 <p className="text-neutral-400 text-xs sm:text-sm max-w-md mx-auto">
-                  <span className="text-emerald-400 font-semibold">{submittedEvent.title}</span> has been added directly into{' '}
+                  <span className="text-emerald-400 font-semibold">{submittedEvent.title}</span> has been uploaded and stored directly in{' '}
                   <code className="bg-white/5 px-2 py-0.5 rounded text-cyan-300 font-mono text-xs">
                     src/components/Events.tsx
-                  </code>{' '}
-                  and is now visible in the live gallery.
+                  </code>.
                 </p>
               </div>
 
@@ -704,7 +703,7 @@ ${newEvent.highlights?.map((h) => `      ${JSON.stringify(h)}`).join(',\n') || '
                   ) : (
                     <>
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Upload & Add to Code</span>
+                      <span>Direct Upload to Code</span>
                     </>
                   )}
                 </button>
