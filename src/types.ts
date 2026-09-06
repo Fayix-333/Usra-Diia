@@ -103,11 +103,14 @@ export interface ClassMessage {
   studentAdNo: string;
   studentName: string;
   studentHouse?: string;
+  studentRollNo?: number;
   message: string;
   createdAt: string;
-  status: 'unread' | 'read';
+  status: 'unread' | 'read' | 'pending' | 'replied';
   reply?: string;
   replyAt?: string;
+  repliedAt?: string;
+  autoExpire1Day?: boolean;
 }
 
 export interface StudentCredential {
