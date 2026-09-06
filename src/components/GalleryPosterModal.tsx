@@ -188,13 +188,13 @@ export default function GalleryPosterModal({ isOpen, onClose, onPosterAdded }: G
             </div>
             <div>
               <h3 className="font-display font-bold text-lg sm:text-xl text-white flex items-center gap-2">
-                <span>Add Poster Directly to Code</span>
+                <span>Add Image Directly to Code</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                   Direct Inject
                 </span>
               </h3>
               <p className="text-xs text-neutral-400 font-mono">
-                Appends poster directly into Gallery source code & live view
+                Appends image directly into Gallery source code & live view
               </p>
             </div>
           </div>
@@ -219,7 +219,7 @@ export default function GalleryPosterModal({ isOpen, onClose, onPosterAdded }: G
                   </div>
                   <div>
                     <h4 className="font-display font-bold text-white text-sm">
-                      Poster Injected Successfully!
+                      Image Injected Successfully!
                     </h4>
                     <p className="text-emerald-300 text-xs font-mono">
                       {successMessage || 'Written to src/components/Gallery.tsx'}
@@ -232,7 +232,7 @@ export default function GalleryPosterModal({ isOpen, onClose, onPosterAdded }: G
                   onClick={resetForm}
                   className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-mono transition-colors cursor-pointer"
                 >
-                  Add Another Poster
+                  Add Another Image
                 </button>
               </div>
 
@@ -273,23 +273,11 @@ export default function GalleryPosterModal({ isOpen, onClose, onPosterAdded }: G
               {/* Image Input Selection */}
               <div className="space-y-3">
                 <label className="block text-xs font-mono uppercase tracking-wider text-neutral-300">
-                  Poster Image (File Upload or Direct URL) <span className="text-red-400">*</span>
+                  Image (File Upload or Direct URL) <span className="text-red-400">*</span>
                 </label>
 
                 {/* Tabs: URL vs File */}
                 <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-white/[0.03] border border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setImageMode('url')}
-                    className={`py-2 px-3 rounded-xl text-xs font-mono font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                      imageMode === 'url'
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <LinkIcon className="w-3.5 h-3.5" />
-                    <span>Image URL / Cloudinary</span>
-                  </button>
                   <button
                     type="button"
                     onClick={() => setImageMode('file')}
@@ -301,6 +289,18 @@ export default function GalleryPosterModal({ isOpen, onClose, onPosterAdded }: G
                   >
                     <Upload className="w-3.5 h-3.5" />
                     <span>Upload Image File</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageMode('url')}
+                    className={`py-2 px-3 rounded-xl text-xs font-mono font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      imageMode === 'url'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    <LinkIcon className="w-3.5 h-3.5" />
+                    <span>Image URL / Cloudinary</span>
                   </button>
                 </div>
 
@@ -337,7 +337,7 @@ export default function GalleryPosterModal({ isOpen, onClose, onPosterAdded }: G
                     />
                     <ImageIcon className="w-8 h-8 text-cyan-400 mx-auto mb-2 opacity-80" />
                     <p className="text-xs text-white font-medium mb-1">
-                      Drag & drop poster image, or <span className="text-cyan-400 underline">browse files</span>
+                      Drag & drop image, or <span className="text-cyan-400 underline">browse files</span>
                     </p>
                     <p className="text-[10px] text-neutral-500 font-mono">
                       PNG, JPG, WebP supported
@@ -350,7 +350,7 @@ export default function GalleryPosterModal({ isOpen, onClose, onPosterAdded }: G
                   <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center gap-4">
                     <img
                       src={currentPosterImage}
-                      alt="Poster Preview"
+                      alt="Image Preview"
                       className="w-20 h-20 object-cover rounded-xl border border-white/10"
                     />
                     <div className="text-xs space-y-1">
@@ -370,14 +370,14 @@ export default function GalleryPosterModal({ isOpen, onClose, onPosterAdded }: G
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-mono uppercase tracking-wider text-neutral-300 mb-1.5">
-                    Poster / Work Title <span className="text-red-400">*</span>
+                    Image Title / Caption <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Ramadan Expo Signature Poster"
+                    placeholder="e.g. Ramadan Expo Feature Visual"
                     className="w-full px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-white text-xs font-mono placeholder:text-neutral-600 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
@@ -416,7 +416,7 @@ export default function GalleryPosterModal({ isOpen, onClose, onPosterAdded }: G
                   className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 hover:opacity-90 disabled:opacity-50 text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-cyan-200" />
-                  <span>{isSubmitting ? 'Injecting into Code...' : 'Add Directly to Code'}</span>
+                  <span>{isSubmitting ? 'Injecting into Code...' : 'Add Image Directly to Code'}</span>
                 </button>
               </div>
             </form>
