@@ -73,6 +73,8 @@ export interface AuthUser {
   department?: string;
   batch?: string;
   photoUrl?: string;
+  isAdmin?: boolean;
+  isWebCreator?: boolean;
   createdAt: string;
 }
 
