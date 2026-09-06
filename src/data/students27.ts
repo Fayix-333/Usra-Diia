@@ -8,7 +8,7 @@ export const STUDENTS_27_ROSTER: Student27[] = [
   { rollNo: 5, adNo: '329', name: 'MUHAMMED HAMDAN.M', status: 'Active', house: 'Poolamanna', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', zehnuthPoints: 22 },
   { rollNo: 6, adNo: '330', name: 'AJSAL V.P.', status: 'Active', house: 'Poolamanna', attendance: 100, roleTitle: 'Union Treasurer', zehnuthPoints: 44 },
   { rollNo: 7, adNo: '332', name: 'MUHAMMED AFNAN.T', status: 'Active', house: 'Velluvangad', attendance: 100, roleTitle: 'Malayalam & Urdu Wing', zehnuthPoints: 272 },
-  { rollNo: 8, adNo: '333', name: 'MOHAMMED FAYIZ K.K.', status: 'Active', house: 'Melattur', attendance: 100, roleTitle: 'IT & Art Wing & Web Admin', zehnuthPoints: 216 },
+  { rollNo: 8, adNo: '333', name: 'MOHAMMED FAYIZ K.K.', status: 'Active', house: 'Melattur', attendance: 100, roleTitle: 'WEB Creator & Lead Admin • IT & Art Wing', zehnuthPoints: 216 },
   { rollNo: 9, adNo: '336', name: 'ABDUL RAHEEM E.K.', status: 'Active', house: 'Pattarkulam', attendance: 100, roleTitle: 'Sports Secretary', zehnuthPoints: 29 },
   { rollNo: 10, adNo: '337', name: 'MUHAMMED FARHAN K.M.', status: 'Active', house: 'Panthallur', attendance: 100, roleTitle: 'Malayalam & Urdu Wing', zehnuthPoints: 0 },
   { rollNo: 11, adNo: '338', name: 'MUHAMMED THOYYIB N.T.', status: 'Active', house: 'Karakkunu', attendance: 100, roleTitle: 'General Secretary', zehnuthPoints: 129 },
