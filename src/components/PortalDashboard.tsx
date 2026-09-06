@@ -996,6 +996,7 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                           <th className="p-3">Student Name</th>
                           <th className="p-3">House</th>
                           <th className="p-3">Union Designation</th>
+                          <th className="p-3 text-center">Zehnuth Points</th>
                           <th className="p-3 text-right pr-4">Attendance</th>
                         </tr>
                       </thead>
@@ -1013,6 +1014,9 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                               <td className="p-3 text-white font-medium">{stu.name}</td>
                               <td className="p-3 text-neutral-300">{stu.house}</td>
                               <td className="p-3 text-neutral-400 text-[11px]">{stu.roleTitle || 'Class Member'}</td>
+                              <td className="p-3 text-center font-mono font-bold text-amber-400">
+                                {stu.zehnuthPoints ?? 0} pts
+                              </td>
                               <td className="p-3 text-right pr-4 font-mono text-emerald-400">{stu.attendance}%</td>
                             </tr>
                           );
