@@ -113,6 +113,81 @@ async function startServer() {
     }
   });
 
+  // Endpoint to add uploaded poster & creative design directly to the code in src/components/Gallery.tsx
+  app.post("/api/gallery/add-to-code", async (req, res) => {
+    try {
+      const item = req.body;
+      if (!item || !item.title || !item.imageUrl) {
+        return res.status(400).json({ error: "Title and poster image are required" });
+      }
+
+      let finalImageUrl = item.imageUrl;
+
+      // If imageUrl is a base64 Data URL, save it as an image file in public/posters/
+      if (typeof item.imageUrl === "string" && item.imageUrl.startsWith("data:image/")) {
+        const matches = item.imageUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+        if (matches) {
+          const rawExt = matches[1].toLowerCase();
+          const ext = rawExt.includes("png") ? "png" : rawExt.includes("jpeg") || rawExt.includes("jpg") ? "jpg" : "webp";
+          const base64Data = matches[2];
+          const cleanTitle = (item.title || "gallery-poster")
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "-")
+            .replace(/-+/g, "-")
+            .slice(0, 30);
+          const fileName = `${cleanTitle}-${Date.now()}.${ext}`;
+          const filePath = path.join(postersDir, fileName);
+          await fs.promises.writeFile(filePath, Buffer.from(base64Data, "base64"));
+          finalImageUrl = `/posters/${fileName}`;
+        }
+      }
+
+      const posterItem = {
+        id: item.id || `gal-${Date.now()}`,
+        title: item.title.trim(),
+        category: item.category || "Design",
+        imageUrl: finalImageUrl
+      };
+
+      // Path to Gallery.tsx
+      const galleryFilePath = path.join(process.cwd(), "src", "components", "Gallery.tsx");
+      let codeUpdated = false;
+
+      if (fs.existsSync(galleryFilePath)) {
+        let content = await fs.promises.readFile(galleryFilePath, "utf-8");
+
+        const newPosterSnippet = `  {\n    id: ${JSON.stringify(posterItem.id)},\n    title: ${JSON.stringify(posterItem.title)},\n    category: ${JSON.stringify(posterItem.category)},\n    imageUrl: ${JSON.stringify(posterItem.imageUrl)}\n  },`;
+
+        const targetMarker = "export const initialGalleryItems: GalleryItem[] = [";
+        const altTargetMarker = "const galleryItems: GalleryItem[] = [";
+
+        if (content.includes(targetMarker)) {
+          content = content.replace(targetMarker, `${targetMarker}\n${newPosterSnippet}`);
+          await fs.promises.writeFile(galleryFilePath, content, "utf-8");
+          codeUpdated = true;
+          console.log(`[Gallery] Successfully inserted poster "${posterItem.title}" directly into src/components/Gallery.tsx`);
+        } else if (content.includes(altTargetMarker)) {
+          content = content.replace(altTargetMarker, `${altTargetMarker}\n${newPosterSnippet}`);
+          await fs.promises.writeFile(galleryFilePath, content, "utf-8");
+          codeUpdated = true;
+          console.log(`[Gallery] Successfully inserted poster "${posterItem.title}" directly into src/components/Gallery.tsx`);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: codeUpdated
+          ? "Poster successfully added directly into src/components/Gallery.tsx!"
+          : "Poster saved to gallery!",
+        item: posterItem,
+        codeUpdated
+      });
+    } catch (error: any) {
+      console.error("Error adding gallery poster to code:", error);
+      res.status(500).json({ error: error.message || "Failed to add gallery poster to code" });
+    }
+  });
+
   // Contact Form Mailing Endpoint - routes messages to usradiia9@gmail.com
   app.post("/api/contact", async (req, res) => {
     try {
