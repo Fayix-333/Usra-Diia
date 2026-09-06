@@ -60,6 +60,7 @@ interface StudentMember {
   house: string;
   attendance: number;
   roleTitle: string;
+  zehnuthPoints: number;
   imageUrl?: string;
 }
 
@@ -85,33 +86,33 @@ const STUDENT_IMAGES: Record<string, string> = {
 };
 
 const students: StudentMember[] = [
-  { id: 'm-1', rollNo: 1, adNo: '297', admissionNo: '297', name: 'SHADI.V', status: 'Active', house: 'Manjeri', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', imageUrl: STUDENT_IMAGES['297'] },
-  { id: 'm-2', rollNo: 2, adNo: '325', admissionNo: '325', name: 'MUHAMMED SINAN.P', status: 'Active', house: 'Nilambur', attendance: 100, roleTitle: 'English & Arabic Wing', imageUrl: STUDENT_IMAGES['325'] },
-  { id: 'm-3', rollNo: 3, adNo: '326', admissionNo: '326', name: 'MUHAMMED AS\'AD .K', status: 'Active', house: 'Nellikuth', attendance: 100, roleTitle: 'Academics Wing', imageUrl: STUDENT_IMAGES['326'] },
-  { id: 'm-4', rollNo: 4, adNo: '328', admissionNo: '328', name: 'MUHAMMED HANAN.I', status: 'Active', house: 'Amayur', attendance: 100, roleTitle: 'Union President', imageUrl: STUDENT_IMAGES['328'] },
-  { id: 'm-5', rollNo: 5, adNo: '329', admissionNo: '329', name: 'MUHAMMED HAMDAN.M', status: 'Active', house: 'Poolamanna', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', imageUrl: STUDENT_IMAGES['329'] },
-  { id: 'm-6', rollNo: 6, adNo: '330', admissionNo: '330', name: 'AJSAL V.P.', status: 'Active', house: 'Poolamanna', attendance: 100, roleTitle: 'Union Treasurer', imageUrl: STUDENT_IMAGES['330'] },
-  { id: 'm-7', rollNo: 7, adNo: '332', admissionNo: '332', name: 'MUHAMMED AFNAN.T', status: 'Active', house: 'Velluvangad', attendance: 100, roleTitle: 'Malayalam & Urdu Wing', imageUrl: STUDENT_IMAGES['332'] },
-  { id: 'm-8', rollNo: 8, adNo: '333', admissionNo: '333', name: 'MOHAMMED FAYIZ K.K.', status: 'Active', house: 'Melattur', attendance: 100, roleTitle: 'IT & Art Wing & Web Admin', imageUrl: STUDENT_IMAGES['333'] },
-  { id: 'm-9', rollNo: 9, adNo: '336', admissionNo: '336', name: 'ABDUL RAHEEM E.K.', status: 'Active', house: 'Pattarkulam', attendance: 100, roleTitle: 'Sports Secretary', imageUrl: STUDENT_IMAGES['336'] },
-  { id: 'm-10', rollNo: 10, adNo: '337', admissionNo: '337', name: 'MUHAMMED FARHAN K.M.', status: 'Active', house: 'Panthallur', attendance: 100, roleTitle: 'Malayalam & Urdu Wing', imageUrl: STUDENT_IMAGES['337'] },
-  { id: 'm-11', rollNo: 11, adNo: '338', admissionNo: '338', name: 'MUHAMMED THOYYIB N.T.', status: 'Active', house: 'Karakkunu', attendance: 100, roleTitle: 'General Secretary', imageUrl: STUDENT_IMAGES['338'] },
-  { id: 'm-12', rollNo: 12, adNo: '339', admissionNo: '339', name: 'MUHAMMED ASHBAL .C', status: 'Active', house: 'Chokkad', attendance: 100, roleTitle: 'Working Secretary', imageUrl: STUDENT_IMAGES['339'] },
-  { id: 'm-13', rollNo: 13, adNo: '341', admissionNo: '341', name: 'RIMSHID SAJIN .N', status: 'Active', house: 'Perimbalam', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', imageUrl: STUDENT_IMAGES['341'] },
-  { id: 'm-14', rollNo: 14, adNo: '342', admissionNo: '342', name: 'MUHAMMED NOUFAN .N', status: 'Active', house: 'Irumbhuzhi', attendance: 100, roleTitle: 'Vice President', imageUrl: STUDENT_IMAGES['342'] },
-  { id: 'm-15', rollNo: 15, adNo: '343', admissionNo: '343', name: 'MUHAMMED JASIM T.K.', status: 'Active', house: 'Melkulankara', attendance: 100, roleTitle: 'P.R.O.', imageUrl: STUDENT_IMAGES['343'] },
-  { id: 'm-16', rollNo: 16, adNo: '344', admissionNo: '344', name: 'ASHFIN V.P.', status: 'Active', house: 'Payyanad', attendance: 100, roleTitle: 'Malayalam & Urdu Wing', imageUrl: STUDENT_IMAGES['344'] },
-  { id: 'm-17', rollNo: 17, adNo: '345', admissionNo: '345', name: 'MUHAMMED SINAN .A', status: 'Active', house: 'Kalambadi', attendance: 100, roleTitle: 'SRDB Wing', imageUrl: STUDENT_IMAGES['345'] },
-  { id: 'm-18', rollNo: 18, adNo: '347', admissionNo: '347', name: 'MUHAMMED SHIHAN P.P.', status: 'Active', house: 'Irumbuzhi', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', imageUrl: STUDENT_IMAGES['347'] },
-  { id: 'm-19', rollNo: 19, adNo: '348', admissionNo: '348', name: 'MUHAMMED ANAS P.P.', status: 'Active', house: 'Irumbuzhi', attendance: 100, roleTitle: 'English & Arabic Wing', imageUrl: STUDENT_IMAGES['348'] },
-  { id: 'm-20', rollNo: 20, adNo: '350', admissionNo: '350', name: 'MUHAMMED SINAN .P', status: 'Active', house: 'Karakkunnu', attendance: 100, roleTitle: 'Academics Wing', imageUrl: STUDENT_IMAGES['350'] },
-  { id: 'm-21', rollNo: 21, adNo: '351', admissionNo: '351', name: 'MUHAMMED ANSIL K.T.', status: 'Active', house: 'Chappanangadi', attendance: 100, roleTitle: 'IT & Art Wing', imageUrl: STUDENT_IMAGES['351'] },
-  { id: 'm-22', rollNo: 22, adNo: '352', admissionNo: '352', name: 'MUHAMMED IYAS .V', status: 'Active', house: 'Mangada', attendance: 100, roleTitle: 'English & Arabic Wing', imageUrl: STUDENT_IMAGES['352'] },
-  { id: 'm-23', rollNo: 23, adNo: '355', admissionNo: '355', name: 'MUHAMMED NIHAD .P', status: 'Active', house: 'Pallipuram, Mangada', attendance: 100, roleTitle: 'SRDB Wing', imageUrl: STUDENT_IMAGES['355'] },
-  { id: 'm-24', rollNo: 24, adNo: '356', admissionNo: '356', name: 'MUHAMMED SWAFWAN .C', status: 'Active', house: 'Wandoor', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', imageUrl: STUDENT_IMAGES['356'] },
-  { id: 'm-25', rollNo: 25, adNo: '357', admissionNo: '357', name: 'MUHAMMED SHAHIN .V', status: 'Active', house: 'Pattikkad', attendance: 100, roleTitle: 'Thazkiya Wing', imageUrl: STUDENT_IMAGES['357'] },
-  { id: 'm-26', rollNo: 26, adNo: '375', admissionNo: '375', name: 'MUHAMMED SWAFWAN .P', status: 'Active', house: 'Melattur', attendance: 100, roleTitle: 'Academics Wing', imageUrl: STUDENT_IMAGES['375'] },
-  { id: 'm-27', rollNo: 27, adNo: '487', admissionNo: '487', name: 'SWALAHUDHEEN AYYOOBI K.M.', status: 'Active', house: 'Nenmini', attendance: 100, roleTitle: 'Thazkiya Wing', imageUrl: STUDENT_IMAGES['487'] }
+  { id: 'm-1', rollNo: 1, adNo: '297', admissionNo: '297', name: 'SHADI.V', status: 'Active', house: 'Manjeri', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', zehnuthPoints: 75, imageUrl: STUDENT_IMAGES['297'] },
+  { id: 'm-2', rollNo: 2, adNo: '325', admissionNo: '325', name: 'MUHAMMED SINAN.P', status: 'Active', house: 'Nilambur', attendance: 100, roleTitle: 'English & Arabic Wing', zehnuthPoints: 130, imageUrl: STUDENT_IMAGES['325'] },
+  { id: 'm-3', rollNo: 3, adNo: '326', admissionNo: '326', name: 'MUHAMMED AS\'AD .K', status: 'Active', house: 'Nellikuth', attendance: 100, roleTitle: 'Academics Wing', zehnuthPoints: 66, imageUrl: STUDENT_IMAGES['326'] },
+  { id: 'm-4', rollNo: 4, adNo: '328', admissionNo: '328', name: 'MUHAMMED HANAN.I', status: 'Active', house: 'Amayur', attendance: 100, roleTitle: 'Union President', zehnuthPoints: 21, imageUrl: STUDENT_IMAGES['328'] },
+  { id: 'm-5', rollNo: 5, adNo: '329', admissionNo: '329', name: 'MUHAMMED HAMDAN.M', status: 'Active', house: 'Poolamanna', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', zehnuthPoints: 22, imageUrl: STUDENT_IMAGES['329'] },
+  { id: 'm-6', rollNo: 6, adNo: '330', admissionNo: '330', name: 'AJSAL V.P.', status: 'Active', house: 'Poolamanna', attendance: 100, roleTitle: 'Union Treasurer', zehnuthPoints: 44, imageUrl: STUDENT_IMAGES['330'] },
+  { id: 'm-7', rollNo: 7, adNo: '332', admissionNo: '332', name: 'MUHAMMED AFNAN.T', status: 'Active', house: 'Velluvangad', attendance: 100, roleTitle: 'Malayalam & Urdu Wing', zehnuthPoints: 272, imageUrl: STUDENT_IMAGES['332'] },
+  { id: 'm-8', rollNo: 8, adNo: '333', admissionNo: '333', name: 'MOHAMMED FAYIZ K.K.', status: 'Active', house: 'Melattur', attendance: 100, roleTitle: 'IT & Art Wing & Web Admin', zehnuthPoints: 216, imageUrl: STUDENT_IMAGES['333'] },
+  { id: 'm-9', rollNo: 9, adNo: '336', admissionNo: '336', name: 'ABDUL RAHEEM E.K.', status: 'Active', house: 'Pattarkulam', attendance: 100, roleTitle: 'Sports Secretary', zehnuthPoints: 29, imageUrl: STUDENT_IMAGES['336'] },
+  { id: 'm-10', rollNo: 10, adNo: '337', admissionNo: '337', name: 'MUHAMMED FARHAN K.M.', status: 'Active', house: 'Panthallur', attendance: 100, roleTitle: 'Malayalam & Urdu Wing', zehnuthPoints: 0, imageUrl: STUDENT_IMAGES['337'] },
+  { id: 'm-11', rollNo: 11, adNo: '338', admissionNo: '338', name: 'MUHAMMED THOYYIB N.T.', status: 'Active', house: 'Karakkunu', attendance: 100, roleTitle: 'General Secretary', zehnuthPoints: 129, imageUrl: STUDENT_IMAGES['338'] },
+  { id: 'm-12', rollNo: 12, adNo: '339', admissionNo: '339', name: 'MUHAMMED ASHBAL .C', status: 'Active', house: 'Chokkad', attendance: 100, roleTitle: 'Working Secretary', zehnuthPoints: 51, imageUrl: STUDENT_IMAGES['339'] },
+  { id: 'm-13', rollNo: 13, adNo: '341', admissionNo: '341', name: 'RIMSHID SAJIN .N', status: 'Active', house: 'Perimbalam', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', zehnuthPoints: 46, imageUrl: STUDENT_IMAGES['341'] },
+  { id: 'm-14', rollNo: 14, adNo: '342', admissionNo: '342', name: 'MUHAMMED NOUFAN .N', status: 'Active', house: 'Irumbhuzhi', attendance: 100, roleTitle: 'Vice President', zehnuthPoints: 163, imageUrl: STUDENT_IMAGES['342'] },
+  { id: 'm-15', rollNo: 15, adNo: '343', admissionNo: '343', name: 'MUHAMMED JASIM T.K.', status: 'Active', house: 'Melkulankara', attendance: 100, roleTitle: 'P.R.O.', zehnuthPoints: 85, imageUrl: STUDENT_IMAGES['343'] },
+  { id: 'm-16', rollNo: 16, adNo: '344', admissionNo: '344', name: 'ASHFIN V.P.', status: 'Active', house: 'Payyanad', attendance: 100, roleTitle: 'Malayalam & Urdu Wing', zehnuthPoints: 0, imageUrl: STUDENT_IMAGES['344'] },
+  { id: 'm-17', rollNo: 17, adNo: '345', admissionNo: '345', name: 'MUHAMMED SINAN .A', status: 'Active', house: 'Kalambadi', attendance: 100, roleTitle: 'SRDB Wing', zehnuthPoints: 55, imageUrl: STUDENT_IMAGES['345'] },
+  { id: 'm-18', rollNo: 18, adNo: '347', admissionNo: '347', name: 'MUHAMMED SHIHAN P.P.', status: 'Active', house: 'Irumbuzhi', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', zehnuthPoints: 63, imageUrl: STUDENT_IMAGES['347'] },
+  { id: 'm-19', rollNo: 19, adNo: '348', admissionNo: '348', name: 'MUHAMMED ANAS P.P.', status: 'Active', house: 'Irumbuzhi', attendance: 100, roleTitle: 'English & Arabic Wing', zehnuthPoints: 60, imageUrl: STUDENT_IMAGES['348'] },
+  { id: 'm-20', rollNo: 20, adNo: '350', admissionNo: '350', name: 'MUHAMMED SINAN .P', status: 'Active', house: 'Karakkunnu', attendance: 100, roleTitle: 'Academics Wing', zehnuthPoints: 0, imageUrl: STUDENT_IMAGES['350'] },
+  { id: 'm-21', rollNo: 21, adNo: '351', admissionNo: '351', name: 'MUHAMMED ANSIL K.T.', status: 'Active', house: 'Chappanangadi', attendance: 100, roleTitle: 'IT & Art Wing', zehnuthPoints: 37, imageUrl: STUDENT_IMAGES['351'] },
+  { id: 'm-22', rollNo: 22, adNo: '352', admissionNo: '352', name: 'MUHAMMED IYAS .V', status: 'Active', house: 'Mangada', attendance: 100, roleTitle: 'English & Arabic Wing', zehnuthPoints: 66, imageUrl: STUDENT_IMAGES['352'] },
+  { id: 'm-23', rollNo: 23, adNo: '355', admissionNo: '355', name: 'MUHAMMED NIHAD .P', status: 'Active', house: 'Pallipuram, Mangada', attendance: 100, roleTitle: 'SRDB Wing', zehnuthPoints: 33, imageUrl: STUDENT_IMAGES['355'] },
+  { id: 'm-24', rollNo: 24, adNo: '356', admissionNo: '356', name: 'MUHAMMED SWAFWAN .C', status: 'Active', house: 'Wandoor', attendance: 100, roleTitle: 'BUREAU FOR REJUVENATED ACTIVITIES', zehnuthPoints: 22, imageUrl: STUDENT_IMAGES['356'] },
+  { id: 'm-25', rollNo: 25, adNo: '357', admissionNo: '357', name: 'MUHAMMED SHAHIN .V', status: 'Active', house: 'Pattikkad', attendance: 100, roleTitle: 'Thazkiya Wing', zehnuthPoints: 43, imageUrl: STUDENT_IMAGES['357'] },
+  { id: 'm-26', rollNo: 26, adNo: '375', admissionNo: '375', name: 'MUHAMMED SWAFWAN .P', status: 'Active', house: 'Melattur', attendance: 100, roleTitle: 'Academics Wing', zehnuthPoints: 89, imageUrl: STUDENT_IMAGES['375'] },
+  { id: 'm-27', rollNo: 27, adNo: '487', admissionNo: '487', name: 'SWALAHUDHEEN AYYOOBI K.M.', status: 'Active', house: 'Nenmini', attendance: 100, roleTitle: 'Thazkiya Wing', zehnuthPoints: 67, imageUrl: STUDENT_IMAGES['487'] }
 ];
 
 const gradients = [
@@ -380,6 +381,12 @@ export default function About() {
                   <span className="truncate">{student.house}</span>
                 </div>
 
+                {/* Zehnuth Points Pill */}
+                <div className="mt-2.5 flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 font-mono text-[10px] font-bold shadow-[0_0_10px_rgba(245,158,11,0.1)]">
+                  <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
+                  <span>{student.zehnuthPoints} Zehnuth Pts</span>
+                </div>
+
                 {/* Bottom line accent */}
                 <div className="absolute bottom-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
               </motion.div>
@@ -465,6 +472,10 @@ export default function About() {
                 <span className="font-mono text-xs text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-3 py-1 rounded-full font-bold">
                   AD NO: {selectedStudent.adNo}
                 </span>
+                <span className="font-mono text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full font-bold flex items-center gap-1.5 shadow-[0_0_12px_rgba(245,158,11,0.15)]">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  {selectedStudent.zehnuthPoints} Zehnuth Points
+                </span>
                 <span className="font-mono text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full font-bold">
                   {selectedStudent.attendance}% Attendance
                 </span>
@@ -475,6 +486,18 @@ export default function About() {
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 block">Union Designation / Wing</span>
                   <span className="text-xs text-cyan-300 font-semibold font-sans mt-0.5 block">{selectedStudent.roleTitle}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 block">Zehnuth Performance Record</span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-sm font-bold font-mono text-amber-300 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      {selectedStudent.zehnuthPoints} Points
+                    </span>
+                    <span className="text-[10px] text-neutral-400 font-sans bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                      Official Class 5 Evaluation
+                    </span>
+                  </div>
                 </div>
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 block">House / Hometown</span>
