@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, LogOut, Shield, GraduationCap, Users, Bell, Plus, Trash2, 
   Calendar, Award, CheckCircle, Search, Mail, ExternalLink, Sparkles, 
-  AlertTriangle, Send, Check, KeyRound, MessageSquare, Reply, Lock 
+  AlertTriangle, Send, Check, KeyRound, MessageSquare, Reply, Lock,
+  Clock, ToggleLeft, ToggleRight, RotateCcw
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { db, collection, addDoc } from '../firebase';
@@ -26,6 +27,10 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
     classMessages,
     sendClassMessage,
     replyClassMessage,
+    deleteClassMessage,
+    purgeClassMessagesOlderThan1Day,
+    autoPurge1DayEnabled,
+    setAutoPurge1DayEnabled,
     changeStudentPassword
   } = useAuth();
   
@@ -55,6 +60,12 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
   const [studentMsgText, setStudentMsgText] = useState('');
   const [isSendingStudentMsg, setIsSendingStudentMsg] = useState(false);
   const [studentMsgFeedback, setStudentMsgFeedback] = useState<string | null>(null);
+  const [msgAutoExpire1Day, setMsgAutoExpire1Day] = useState(true);
+
+  // 1-Day Message Removal & Management State
+  const [isPurgingMessages, setIsPurgingMessages] = useState(false);
+  const [purgeFeedback, setPurgeFeedback] = useState<string | null>(null);
+  const [deletingMsgId, setDeletingMsgId] = useState<string | null>(null);
 
   // Usthad Reply State
   const [replyTextMap, setReplyTextMap] = useState<Record<string, string>>({});
@@ -69,6 +80,58 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
   const isStudent27 = currentUser.role === 'student_27';
   const currentStudentData = isStudent27 ? students27List.find(s => s.adNo === currentUser.adNo) : null;
   const myClassMessages = classMessages.filter(m => m.studentAdNo === currentUser.adNo);
+
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+  const expiredCountAll = classMessages.filter(m => {
+    const t = new Date(m.createdAt).getTime();
+    return !isNaN(t) && Date.now() - t >= ONE_DAY_MS;
+  }).length;
+  const expiredCountMine = myClassMessages.filter(m => {
+    const t = new Date(m.createdAt).getTime();
+    return !isNaN(t) && Date.now() - t >= ONE_DAY_MS;
+  }).length;
+
+  const getMessageTimeStatus = (createdAt: string) => {
+    const createdTime = new Date(createdAt).getTime();
+    if (isNaN(createdTime)) return { isExpired: false, label: 'Recent', expireText: 'Just now' };
+    const diffMs = Date.now() - createdTime;
+    const isExpired = diffMs >= ONE_DAY_MS;
+    const hoursAgo = Math.floor(diffMs / (60 * 60 * 1000));
+    const remainingHours = Math.max(0, 24 - hoursAgo);
+
+    return {
+      isExpired,
+      hoursAgo,
+      remainingHours,
+      label: isExpired 
+        ? `${Math.floor(diffMs / ONE_DAY_MS)}d old (1+ day)` 
+        : hoursAgo < 1 ? 'Sent just now' : `${hoursAgo}h ago`,
+      expireText: isExpired ? '1+ day old (expired)' : `${remainingHours}h left of 1-day retention`
+    };
+  };
+
+  const handlePurgeOldMessages = async () => {
+    setIsPurgingMessages(true);
+    setPurgeFeedback(null);
+    const res = await purgeClassMessagesOlderThan1Day();
+    setIsPurgingMessages(false);
+    if (res.success) {
+      setPurgeFeedback(
+        res.count > 0
+          ? `Removed ${res.count} message${res.count > 1 ? 's' : ''} older than 1 day from the portal.`
+          : 'No messages older than 1 day found in portal.'
+      );
+      setTimeout(() => setPurgeFeedback(null), 4000);
+    }
+  };
+
+  const handleDeleteIndividualMsg = async (msgId: string) => {
+    setDeletingMsgId(msgId);
+    await deleteClassMessage(msgId);
+    setDeletingMsgId(null);
+    setPurgeFeedback('Message removed from portal.');
+    setTimeout(() => setPurgeFeedback(null), 3000);
+  };
 
   const handleCreateAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,12 +184,16 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
 
     setIsSendingStudentMsg(true);
     setStudentMsgFeedback(null);
-    const res = await sendClassMessage(studentMsgText.trim());
+    const res = await sendClassMessage(studentMsgText.trim(), msgAutoExpire1Day);
     setIsSendingStudentMsg(false);
 
     if (res.success) {
       setStudentMsgText('');
-      setStudentMsgFeedback('Message sent directly to Class Teacher (Usthad Fazlu Rehman Hudawi)!');
+      setStudentMsgFeedback(
+        msgAutoExpire1Day
+          ? 'Message sent directly to Class Teacher! (Set to automatically remove after 1 day)'
+          : 'Message sent directly to Class Teacher (Usthad Fazlu Rehman Hudawi)!'
+      );
       setTimeout(() => setStudentMsgFeedback(null), 4000);
     } else {
       setStudentMsgFeedback(res.error || 'Failed to send message.');
@@ -603,14 +670,24 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-neutral-500 font-mono">
-                        Not accessible to other students or external campus members.
-                      </span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                      <label className="flex items-center gap-2 text-xs text-neutral-300 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={msgAutoExpire1Day}
+                          onChange={(e) => setMsgAutoExpire1Day(e.target.checked)}
+                          className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                        <span className="flex items-center gap-1.5 font-mono text-[11px] text-cyan-300">
+                          <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>Remove from portal after 1 day (24h retention)</span>
+                        </span>
+                      </label>
+
                       <button
                         type="submit"
                         disabled={isSendingStudentMsg || !studentMsgText.trim()}
-                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       >
                         {isSendingStudentMsg ? (
                           <span>Sending...</span>
@@ -627,43 +704,113 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                   {/* Previous messages from this student */}
                   {myClassMessages.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
-                      <h5 className="text-xs font-mono text-neutral-400 font-semibold uppercase tracking-wider">
-                        Your Conversation History ({myClassMessages.length})
-                      </h5>
-                      <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-                        {myClassMessages.map((msg) => (
-                          <div key={msg.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[11px] font-mono text-neutral-400">
-                                {new Date(msg.createdAt).toLocaleString()}
-                              </span>
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
-                                msg.status === 'replied'
-                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                              }`}>
-                                {msg.status === 'replied' ? 'Replied by Usthad' : 'Awaiting Reply'}
-                              </span>
-                            </div>
-                            <p className="text-white text-xs leading-relaxed">{msg.message}</p>
-                            {msg.reply && (
-                              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/25 mt-2 space-y-1">
-                                <div className="flex items-center justify-between text-[10px] font-mono text-amber-300">
-                                  <span className="font-bold flex items-center gap-1">
-                                    <Shield className="w-3 h-3" />
-                                    <span>Usthad Fazlu Rehman Hudawi [Class Teacher]</span>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <h5 className="text-xs font-mono text-neutral-400 font-semibold uppercase tracking-wider">
+                            Your Conversation History ({myClassMessages.length})
+                          </h5>
+                          {expiredCountMine > 0 && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              {expiredCountMine} Expired (1+ day)
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {expiredCountMine > 0 && (
+                            <button
+                              type="button"
+                              onClick={handlePurgeOldMessages}
+                              disabled={isPurgingMessages}
+                              className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              <span>{isPurgingMessages ? 'Cleaning...' : `Clean 1+ Day Old (${expiredCountMine})`}</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setAutoPurge1DayEnabled(!autoPurge1DayEnabled)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer ${
+                              autoPurge1DayEnabled 
+                                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' 
+                                : 'bg-neutral-800 text-neutral-400 border border-white/5'
+                            }`}
+                            title="Toggle automatic daily purge on page refresh"
+                          >
+                            <Clock className="w-3 h-3" />
+                            <span>1-Day Auto-Purge: {autoPurge1DayEnabled ? 'ON' : 'OFF'}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {purgeFeedback && (
+                        <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono flex items-center gap-2">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>{purgeFeedback}</span>
+                        </div>
+                      )}
+
+                      <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                        {myClassMessages.map((msg) => {
+                          const timeInfo = getMessageTimeStatus(msg.createdAt);
+                          return (
+                            <div key={msg.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] font-mono text-neutral-400">
+                                    {new Date(msg.createdAt).toLocaleString()}
                                   </span>
-                                  {msg.repliedAt && (
-                                    <span className="text-neutral-400">
-                                      {new Date(msg.repliedAt).toLocaleString()}
-                                    </span>
-                                  )}
+                                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono ${
+                                    timeInfo.isExpired 
+                                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                                      : 'bg-white/5 text-neutral-400'
+                                  }`}>
+                                    <Clock className="w-2.5 h-2.5 text-cyan-400" />
+                                    <span>{timeInfo.label}</span>
+                                    <span>•</span>
+                                    <span>{timeInfo.expireText}</span>
+                                  </span>
                                 </div>
-                                <p className="text-amber-100 text-xs">{msg.reply}</p>
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
+                                    msg.status === 'replied'
+                                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                  }`}>
+                                    {msg.status === 'replied' ? 'Replied by Usthad' : 'Awaiting Reply'}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteIndividualMsg(msg.id)}
+                                    disabled={deletingMsgId === msg.id}
+                                    title="Remove this message from portal"
+                                    className="p-1 rounded text-neutral-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        ))}
+                              <p className="text-white text-xs leading-relaxed">{msg.message}</p>
+                              {msg.reply && (
+                                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/25 mt-2 space-y-1">
+                                  <div className="flex items-center justify-between text-[10px] font-mono text-amber-300">
+                                    <span className="font-bold flex items-center gap-1">
+                                      <Shield className="w-3 h-3" />
+                                      <span>Usthad Fazlu Rehman Hudawi [Class Teacher]</span>
+                                    </span>
+                                    {msg.repliedAt && (
+                                      <span className="text-neutral-400">
+                                        {new Date(msg.repliedAt).toLocaleString()}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-amber-100 text-xs">{msg.reply}</p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -769,33 +916,72 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
             {/* CLASS TEACHER DIRECT STUDENT MESSAGES INBOX */}
             {isUsthad && (
               <div className="p-6 rounded-2xl bg-neutral-900/80 border border-amber-500/30 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
                       <MessageSquare className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="font-display font-bold text-base text-white flex items-center gap-2">
+                      <h3 className="font-display font-bold text-base text-white flex flex-wrap items-center gap-2">
                         <span>27 Students Class Inbox</span>
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
                           {classMessages.length} Messages
                         </span>
+                        {expiredCountAll > 0 && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            {expiredCountAll} 1+ Day Old
+                          </span>
+                        )}
                       </h3>
                       <p className="text-neutral-400 text-xs">
                         Confidential direct queries & requests submitted by students from the 27 Students batch
                       </p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Live Class Teacher Channel
-                  </span>
+
+                  {/* 1-Day Auto-Purge Controls & Actions */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {expiredCountAll > 0 && (
+                      <button
+                        type="button"
+                        onClick={handlePurgeOldMessages}
+                        disabled={isPurgingMessages}
+                        className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-mono text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-md"
+                        title="Delete all messages sent more than 24 hours ago"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{isPurgingMessages ? 'Removing...' : `Clean 1+ Day Old (${expiredCountAll})`}</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setAutoPurge1DayEnabled(!autoPurge1DayEnabled)}
+                      className={`px-3 py-1.5 rounded-xl font-mono text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                        autoPurge1DayEnabled
+                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
+                          : 'bg-neutral-800 text-neutral-400 border-white/10'
+                      }`}
+                      title="Toggle auto-removal of 1-day-old messages on portal refresh"
+                    >
+                      <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>1-Day Auto-Purge: {autoPurge1DayEnabled ? 'ACTIVE' : 'OFF'}</span>
+                    </button>
+                  </div>
                 </div>
+
+                {purgeFeedback && (
+                  <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>{purgeFeedback}</span>
+                  </div>
+                )}
 
                 {classMessages.length > 0 ? (
                   <div className="space-y-3">
                     {classMessages.map((msg) => {
                       const isPending = msg.status === 'pending';
+                      const timeInfo = getMessageTimeStatus(msg.createdAt);
                       return (
                         <div
                           key={msg.id}
@@ -816,10 +1002,23 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                                   Roll #{msg.studentRollNo}
                                 </span>
                               )}
+                              {msg.autoExpire1Day && (
+                                <span className="px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-[9px] font-mono flex items-center gap-1">
+                                  <Clock className="w-2.5 h-2.5" />
+                                  <span>24h Auto-Expire</span>
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-mono text-neutral-500">
-                                {new Date(msg.createdAt).toLocaleString()}
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono ${
+                                timeInfo.isExpired
+                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                  : 'bg-white/5 text-neutral-400'
+                              }`}>
+                                <Clock className="w-3 h-3 text-cyan-400" />
+                                <span>{timeInfo.label}</span>
+                                <span>•</span>
+                                <span>{timeInfo.expireText}</span>
                               </span>
                               <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
                                 isPending
@@ -828,6 +1027,15 @@ export default function PortalDashboard({ isOpen, onClose }: PortalDashboardProp
                               }`}>
                                 {isPending ? 'Awaiting Reply' : 'Replied'}
                               </span>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteIndividualMsg(msg.id)}
+                                disabled={deletingMsgId === msg.id}
+                                title="Remove this message from portal"
+                                className="p-1 rounded text-neutral-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           </div>
 
