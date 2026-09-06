@@ -17,10 +17,12 @@ import {
   CheckCircle2,
   PlusCircle,
   Upload,
-  FileCode
+  Lock,
+  Shield
 } from 'lucide-react';
 import { EventItem } from '../types';
 import PosterUploadModal from './PosterUploadModal';
+import { useAuth } from '../context/AuthContext';
 
 // ============================================================================
 // MODEL UNION EVENT POSTERS
@@ -149,7 +151,8 @@ export const initialEventsData: EventItem[] = [
 
 const categories = ['All', 'Upcoming', 'Cultural', 'Academic', 'Sports', 'Workshops'];
 
-export default function Events() {
+export default function Events({ onOpenAuth }: { onOpenAuth?: () => void }) {
+  const { currentUser, isStudent27, isUsthad, isWebCreator, isAdmin, canUploadPoster } = useAuth();
   const [events, setEvents] = useState<EventItem[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -171,9 +174,32 @@ export default function Events() {
 
   const [activeCategory, setActiveCategory] = useState('All');
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
-  const [showAddPosterTip, setShowAddPosterTip] = useState(false);
+  const [showAuthRestrictedModal, setShowAuthRestrictedModal] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Uploading Poster option ONLY available to Class Students and Class Teacher (and Mohammed Fayiz KK Admin)
+  const isPosterAuthorized = Boolean(
+    currentUser && (
+      isStudent27 ||
+      isUsthad ||
+      isWebCreator ||
+      isAdmin ||
+      canUploadPoster ||
+      currentUser.role === 'student_27' ||
+      currentUser.role === 'usthad_fsl' ||
+      currentUser.adNo === '333' ||
+      !!currentUser.adNo
+    )
+  );
+
+  const handleUploadClick = () => {
+    if (isPosterAuthorized) {
+      setIsUploadModalOpen(true);
+    } else {
+      setShowAuthRestrictedModal(true);
+    }
+  };
 
   const handleEventAdded = (newEvent: EventItem) => {
     setEvents((prev) => {
@@ -276,24 +302,15 @@ export default function Events() {
           })}
         </div>
 
-        {/* Action Controls: Direct Upload to Code & Code Tip */}
+        {/* Action Controls: Upload poster (Restricted to Class Students & Class Teacher) */}
         <div className="flex items-center gap-2.5 self-end sm:self-auto">
           <button
-            onClick={() => setIsUploadModalOpen(true)}
+            onClick={handleUploadClick}
             className="group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-blue-500/40 bg-gradient-to-r from-blue-600/25 via-cyan-600/20 to-blue-600/25 hover:from-blue-600/40 hover:via-cyan-600/30 hover:to-blue-600/40 text-white text-xs font-semibold tracking-wide transition-all duration-300 cursor-pointer shadow-[0_0_20px_rgba(59,130,246,0.25)] hover:shadow-[0_0_25px_rgba(59,130,246,0.45)] hover:border-blue-400/60"
           >
             <Upload className="w-4 h-4 text-cyan-400 transition-transform group-hover:-translate-y-0.5" />
-            <span>Direct Upload to Code</span>
+            <span>Upload poster</span>
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          </button>
-
-          <button
-            onClick={() => setShowAddPosterTip(true)}
-            title="View Model Poster Guide"
-            className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] text-neutral-400 hover:text-white text-xs font-medium transition-all duration-300 cursor-pointer"
-          >
-            <FileCode className="w-4 h-4 text-neutral-400" />
-            <span className="hidden md:inline">Code Guide</span>
           </button>
         </div>
       </div>
@@ -572,16 +589,16 @@ export default function Events() {
         )}
       </AnimatePresence>
 
-      {/* Guide Modal on Adding Union Posters */}
+      {/* Access Restriction Notice Modal */}
       <AnimatePresence>
-        {showAddPosterTip && (
+        {showAuthRestrictedModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowAddPosterTip(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-md"
+              onClick={() => setShowAuthRestrictedModal(false)}
+              className="fixed inset-0 bg-black/85 backdrop-blur-md"
             />
 
             <motion.div
@@ -589,54 +606,55 @@ export default function Events() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-lg bg-neutral-950 border border-white/10 rounded-[28px] p-6 sm:p-8 shadow-2xl z-10"
+              className="relative w-full max-w-md bg-neutral-950 border border-amber-500/30 rounded-[28px] p-6 sm:p-8 shadow-2xl z-10"
             >
               <button
-                onClick={() => setShowAddPosterTip(false)}
+                onClick={() => setShowAuthRestrictedModal(false)}
                 className="absolute top-4 right-4 p-2 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
 
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-                  <Sparkles className="w-5 h-5" />
+                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
+                  <Shield className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-lg text-white">How to Add Union Posters</h3>
-                  <p className="text-xs text-neutral-400">Quick template guide for adding your batch event posters</p>
+                  <h3 className="font-display font-bold text-lg text-white">Poster Upload Restricted</h3>
+                  <p className="text-xs text-neutral-400">Authorized USRA Personnel Only</p>
                 </div>
               </div>
 
               <div className="space-y-3 text-xs text-neutral-300 mb-6">
                 <p className="leading-relaxed">
-                  You can easily add your union posters by updating the <code className="text-cyan-300 bg-white/5 px-1.5 py-0.5 rounded font-mono">initialEventsData</code> list in <code className="text-cyan-300 bg-white/5 px-1.5 py-0.5 rounded font-mono">src/components/Events.tsx</code>:
+                  The <strong className="text-amber-300">Upload poster</strong> studio is exclusively accessible to verified <strong className="text-blue-300">Class Students (27 Batch)</strong> and the <strong className="text-amber-300">Class Teacher (Usthad)</strong>.
                 </p>
-
-                <div className="p-3 rounded-xl bg-black/70 border border-white/5 font-mono text-[11px] text-neutral-300 overflow-x-auto">
-                  <pre>{`{
-  id: 'event-7',
-  title: 'Your Event Name',
-  date: 'OCT 2026',
-  venue: 'Main Campus Stage',
-  status: 'upcoming', // or 'completed'
-  category: 'Cultural', // Sports, Academic...
-  imageUrl: 'https://i.ibb.co/your-poster.png',
-  description: 'Your event description here...'
-}`}</pre>
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 text-[11px] text-neutral-400">
+                  Please log in with your Admission Number or Faculty Account to publish and manage union event posters.
                 </div>
-
-                <p className="text-neutral-400 leading-relaxed">
-                  Upload your poster image or use any image link (e.g. ImgBB, Unsplash, or local assets) and set it in <code className="text-cyan-300">imageUrl</code>!
-                </p>
               </div>
 
-              <button
-                onClick={() => setShowAddPosterTip(false)}
-                className="w-full py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition-colors cursor-pointer"
-              >
-                Got It, Ready to Add Posters
-              </button>
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                {onOpenAuth && (
+                  <button
+                    onClick={() => {
+                      setShowAuthRestrictedModal(false);
+                      onOpenAuth();
+                    }}
+                    className="w-full py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition-colors cursor-pointer"
+                  >
+                    Sign In to USRA Portal
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowAuthRestrictedModal(false)}
+                  className={`py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-neutral-300 font-medium text-xs transition-colors cursor-pointer ${
+                    onOpenAuth ? 'w-full sm:w-auto px-5' : 'w-full'
+                  }`}
+                >
+                  Close
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
