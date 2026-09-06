@@ -276,14 +276,14 @@ export default function Events() {
           })}
         </div>
 
-        {/* Action Controls: Upload Poster & Code Tip */}
+        {/* Action Controls: Direct Upload to Code & Code Tip */}
         <div className="flex items-center gap-2.5 self-end sm:self-auto">
           <button
             onClick={() => setIsUploadModalOpen(true)}
             className="group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-blue-500/40 bg-gradient-to-r from-blue-600/25 via-cyan-600/20 to-blue-600/25 hover:from-blue-600/40 hover:via-cyan-600/30 hover:to-blue-600/40 text-white text-xs font-semibold tracking-wide transition-all duration-300 cursor-pointer shadow-[0_0_20px_rgba(59,130,246,0.25)] hover:shadow-[0_0_25px_rgba(59,130,246,0.45)] hover:border-blue-400/60"
           >
             <Upload className="w-4 h-4 text-cyan-400 transition-transform group-hover:-translate-y-0.5" />
-            <span>Upload Poster to Code</span>
+            <span>Direct Upload to Code</span>
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
           </button>
 
