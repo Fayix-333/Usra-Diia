@@ -1,0 +1,8 @@
+{
+  "name": "Remix: USRA",
+  "description": "Darul Irfan Islamic Academy 9th batch students\u0027 union, USRA. Union for Sincere \u0026 Rejuvenated Activies.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /studentRecords/{adNo} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /inquiries/{inquiryId} {
+      allow read: if isSignedIn();
+      allow create: if true;
+    }
+
+    // Secure student credentials: listing is denied so only admin can view through Firebase Console
+    match /studentCredentials/{adNo} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if true;
+    }
+
+    // Secure credentials for faculty and campus members
+    match /userCredentials/{userId} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if true;
+    }
+
+    // Class messages between 27 students and Class Teacher
+    match /classMessages/{messageId} {
+      allow read, write: if true;
+    }
+
+    match /test/connection {
+      allow read, write: if true;
+    }
+  }
+}

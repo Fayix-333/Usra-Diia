@@ -1,0 +1,11 @@
+[
+  {
+    "id": "inq-1788492102373",
+    "name": "Test User",
+    "email": "test@example.com",
+    "subject": "Test Portal Message",
+    "message": "Testing transmission to usradiia9@gmail.com",
+    "to": "usradiia9@gmail.com",
+    "receivedAt": "2026-09-04T03:21:42.373Z"
+  }
+]
