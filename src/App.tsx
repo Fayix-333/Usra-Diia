@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import Loader from './components/Loader';
 import CustomCursor from './components/CustomCursor';
+import ParticleBackground from './components/ParticleBackground';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import About from './components/About';
@@ -63,6 +64,9 @@ export default function App() {
         >
           {/* Custom Cursor Spotlight tracker */}
           <CustomCursor />
+
+          {/* Interactive Full-Page Particle Constellation Field */}
+          <ParticleBackground />
 
           {/* Frosted Glass Sticky Navbar */}
           <Navbar 
