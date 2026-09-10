@@ -45,9 +45,8 @@ export default function Footer({ onNavClick }: FooterProps) {
                   <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/20 to-transparent pointer-events-none" />
                 </div>
               </div>
-              <div className="flex flex-col">
-                <span className="font-display font-bold text-sm tracking-widest text-white">USRA</span>
-                <span className="text-[8px] font-mono tracking-widest uppercase text-neutral-400 -mt-1">MEDIA</span>
+              <div className="flex items-center">
+                <span className="font-display font-bold text-base tracking-widest text-white">USRA</span>
               </div>
             </div>
             
@@ -95,7 +94,7 @@ export default function Footer({ onNavClick }: FooterProps) {
         {/* Bottom Socials & copyright credits */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="text-neutral-500 text-[11px] font-mono">
-            &copy; {new Date().getFullYear()} USRA MEDIA. Engineered under Student Union Jurisdiction. All Rights Reserved.
+            &copy; {new Date().getFullYear()} USRA. Engineered under Student Union Jurisdiction. All Rights Reserved.
           </div>
 
           {/* Social icons capsule group */}

@@ -16,55 +16,107 @@ export default function Hero({ onExploreClick, onJoinClick, onLoginClick }: Hero
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
     let animationFrameId: number;
-    let particles: Array<{
+    let width = 0;
+    let height = 0;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    interface Particle {
       x: number;
       y: number;
+      originX: number;
+      originY: number;
       vx: number;
       vy: number;
       radius: number;
+      baseRadius: number;
       color: string;
       alpha: number;
-    }> = [];
+      baseAlpha: number;
+      pulseSpeed: number;
+      pulseAngle: number;
+    }
 
-    const numParticles = 65;
-    let mouse = { x: -1000, y: -1000 };
+    let particles: Particle[] = [];
+    const isMobile = window.innerWidth < 768;
+    const numParticles = isMobile ? 42 : 80;
+    const connectionDistance = isMobile ? 85 : 125;
+    const mouseRadius = isMobile ? 120 : 170;
+
+    let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000, isHovering: false };
+
+    const colors = [
+      { r: 59, g: 130, b: 246 },   // Blue-500
+      { r: 6, g: 182, b: 212 },    // Cyan-500
+      { r: 96, g: 165, b: 250 },   // Blue-400
+      { r: 34, g: 211, b: 238 },   // Cyan-400
+      { r: 129, g: 140, b: 248 },  // Indigo-400
+      { r: 248, g: 250, b: 252 },  // Slate-50
+    ];
 
     const resizeCanvas = () => {
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = rect.width;
+      height = rect.height;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.scale(dpr, dpr);
       initParticles();
     };
 
     const initParticles = () => {
       particles = [];
-      const colors = ['#3b82f6', '#06b6d4', '#60a5fa', '#ffffff'];
       for (let i = 0; i < numParticles; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const colorObj = colors[Math.floor(Math.random() * colors.length)];
+        const color = `${colorObj.r}, ${colorObj.g}, ${colorObj.b}`;
+        const baseRadius = Math.random() * 1.6 + 0.6;
+        const baseAlpha = Math.random() * 0.45 + 0.15;
+
         particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.4,
-          vy: (Math.random() - 0.5) * 0.4,
-          radius: Math.random() * 1.5 + 0.5,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          alpha: Math.random() * 0.4 + 0.1,
+          x,
+          y,
+          originX: x,
+          originY: y,
+          vx: (Math.random() - 0.5) * 0.45,
+          vy: (Math.random() - 0.5) * 0.45,
+          radius: baseRadius,
+          baseRadius,
+          color,
+          alpha: baseAlpha,
+          baseAlpha,
+          pulseSpeed: Math.random() * 0.02 + 0.008,
+          pulseAngle: Math.random() * Math.PI * 2,
         });
       }
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (clientX: number, clientY: number) => {
       const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
+      mouse.targetX = clientX - rect.left;
+      mouse.targetY = clientY - rect.top;
+      mouse.isHovering = true;
     };
 
-    const handleMouseLeave = () => {
-      mouse.x = -1000;
-      mouse.y = -1000;
+    const onMouseMove = (e: MouseEvent) => {
+      handlePointerMove(e.clientX, e.clientY);
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
+    const onPointerLeave = () => {
+      mouse.targetX = -1000;
+      mouse.targetY = -1000;
+      mouse.isHovering = false;
     };
 
     const resizeObserver = new ResizeObserver(() => {
@@ -76,55 +128,144 @@ export default function Hero({ onExploreClick, onJoinClick, onLoginClick }: Hero
     }
 
     resizeCanvas();
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    canvas.addEventListener('mouseleave', handleMouseLeave, { passive: true });
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    document.addEventListener('mouseleave', onPointerLeave);
+    window.addEventListener('touchend', onPointerLeave);
 
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let lastTime = performance.now();
 
-      // Draw particle nodes
-      particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
+    const draw = (now: number) => {
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
 
-        // Wrap around boundaries
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
+      // Smooth mouse interpolation
+      if (mouse.targetX !== -1000) {
+        mouse.x += (mouse.targetX - mouse.x) * 0.12;
+        mouse.y += (mouse.targetY - mouse.y) * 0.12;
+      } else {
+        mouse.x = -1000;
+        mouse.y = -1000;
+      }
 
-        // Mouse repelling physics
-        if (mouse.x !== -1000) {
-          const dx = p.x - mouse.x;
-          const dy = p.y - mouse.y;
-          const dist = Math.hypot(dx, dy);
-          if (dist < 120) {
-            const force = (120 - dist) / 120;
-            p.x += (dx / dist) * force * 1.5;
-            p.y += (dy / dist) * force * 1.5;
+      ctx.clearRect(0, 0, width, height);
+
+      // Subtle interactive mouse ambient aura
+      if (mouse.x !== -1000 && mouse.y !== -1000) {
+        const mouseGlow = ctx.createRadialGradient(
+          mouse.x,
+          mouse.y,
+          0,
+          mouse.x,
+          mouse.y,
+          mouseRadius * 1.2
+        );
+        mouseGlow.addColorStop(0, 'rgba(6, 182, 212, 0.08)');
+        mouseGlow.addColorStop(0.5, 'rgba(59, 130, 246, 0.03)');
+        mouseGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = mouseGlow;
+        ctx.beginPath();
+        ctx.arc(mouse.x, mouse.y, mouseRadius * 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Update and draw particles
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+
+        // Organic harmonic drifting
+        p.pulseAngle += p.pulseSpeed;
+        const pulse = Math.sin(p.pulseAngle);
+        p.alpha = p.baseAlpha + pulse * 0.12;
+        p.radius = p.baseRadius + pulse * 0.3;
+
+        // Position update
+        p.x += p.vx * (1 + pulse * 0.2);
+        p.y += p.vy * (1 + pulse * 0.2);
+
+        // Gentle boundary loop
+        if (p.x < -10) p.x = width + 10;
+        else if (p.x > width + 10) p.x = -10;
+        if (p.y < -10) p.y = height + 10;
+        else if (p.y > height + 10) p.y = -10;
+
+        // Interactive mouse physics (subtle fluid attraction & repelling)
+        if (mouse.x !== -1000 && mouse.y !== -1000) {
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const distSq = dx * dx + dy * dy;
+          const mouseRadiusSq = mouseRadius * mouseRadius;
+
+          if (distSq < mouseRadiusSq && distSq > 0.01) {
+            const dist = Math.sqrt(distSq);
+            const factor = (mouseRadius - dist) / mouseRadius;
+            
+            // Light deflection force
+            const force = factor * 2.2;
+            p.x -= (dx / dist) * force;
+            p.y -= (dy / dist) * force;
+
+            // Extra brightness near cursor
+            p.alpha = Math.min(1, p.alpha + factor * 0.5);
+            p.radius = p.baseRadius + factor * 1.2;
           }
         }
 
-        // Render particle
+        // Draw particle dot with soft glow
         ctx.save();
-        ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, Math.max(0.5, p.radius), 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${p.color}, ${Math.max(0.05, Math.min(1, p.alpha))})`;
         ctx.fill();
-        ctx.restore();
-      });
 
-      // Draw elegant connections
-      ctx.strokeStyle = 'rgba(59, 130, 246, 0.04)';
-      ctx.lineWidth = 0.5;
+        // Optional tiny glow for larger particles
+        if (p.baseRadius > 1.4) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius * 2.2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${p.color}, ${Math.max(0, p.alpha * 0.2)})`;
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // Draw dynamic constellation connection lines
+      const connSq = connectionDistance * connectionDistance;
       for (let i = 0; i < particles.length; i++) {
+        const p1 = particles[i];
         for (let j = i + 1; j < particles.length; j++) {
-          const dist = Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y);
-          if (dist < 90) {
+          const p2 = particles[j];
+          const dx = p1.x - p2.x;
+          const dy = p1.y - p2.y;
+          const distSq = dx * dx + dy * dy;
+
+          if (distSq < connSq) {
+            const dist = Math.sqrt(distSq);
+            const opacity = (1 - dist / connectionDistance) * 0.16;
+
             ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(59, 130, 246, ${opacity})`;
+            ctx.lineWidth = 0.65;
+            ctx.stroke();
+          }
+        }
+
+        // Connect particle to mouse if in range
+        if (mouse.x !== -1000 && mouse.y !== -1000) {
+          const dx = mouse.x - p1.x;
+          const dy = mouse.y - p1.y;
+          const distSq = dx * dx + dy * dy;
+          const mouseConnSq = (mouseRadius * 0.85) * (mouseRadius * 0.85);
+
+          if (distSq < mouseConnSq) {
+            const dist = Math.sqrt(distSq);
+            const opacity = (1 - dist / (mouseRadius * 0.85)) * 0.22;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.strokeStyle = `rgba(6, 182, 212, ${opacity})`;
+            ctx.lineWidth = 0.8;
             ctx.stroke();
           }
         }
@@ -133,12 +274,14 @@ export default function Hero({ onExploreClick, onJoinClick, onLoginClick }: Hero
       animationFrameId = requestAnimationFrame(draw);
     };
 
-    draw();
+    animationFrameId = requestAnimationFrame(draw);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('mouseleave', onPointerLeave);
+      window.removeEventListener('touchend', onPointerLeave);
       resizeObserver.disconnect();
     };
   }, []);
