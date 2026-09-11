@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import Loader from './components/Loader';
 import CustomCursor from './components/CustomCursor';
 import ParticleBackground from './components/ParticleBackground';
+import ScrollToTop from './components/ScrollToTop';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import About from './components/About';
@@ -67,6 +68,9 @@ export default function App() {
 
           {/* Interactive Full-Page Particle Constellation Field */}
           <ParticleBackground />
+
+          {/* Scroll to Top floating action button */}
+          <ScrollToTop />
 
           {/* Frosted Glass Sticky Navbar */}
           <Navbar 
