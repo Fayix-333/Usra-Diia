@@ -107,6 +107,16 @@
         "updatedAt": { "type": "string", "description": "Timestamp of password change" }
       },
       "required": ["userId", "username", "password", "updatedAt"]
+    },
+    "Analytics": {
+      "title": "Analytics",
+      "description": "General traffic and community analytics",
+      "type": "object",
+      "properties": {
+        "count": { "type": "integer", "description": "Total number of visitor sessions" },
+        "updatedAt": { "type": "string", "description": "Last increment timestamp" }
+      },
+      "required": ["count"]
     }
   },
   "firestore": {
@@ -137,6 +147,10 @@
     "/classMessages/{messageId}": {
       "schema": "ClassMessage",
       "description": "Direct communication channel between 27 students and Class Teacher"
+    },
+    "/analytics/{docId}": {
+      "schema": "Analytics",
+      "description": "Global statistics and visitor counts"
     }
   }
 }

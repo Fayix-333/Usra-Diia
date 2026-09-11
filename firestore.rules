@@ -45,6 +45,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Analytics and live visitor counter tracking
+    match /analytics/{docId} {
+      allow read, write: if true;
+    }
+
     match /test/connection {
       allow read, write: if true;
     }

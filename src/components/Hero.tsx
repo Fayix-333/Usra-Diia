@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { ArrowDown, Play, Sparkles, Key, GraduationCap } from 'lucide-react';
 import { staggerContainerVariants, staggerItemVariants } from '../animations';
+import VisitorCounter from './VisitorCounter';
 
 interface HeroProps {
   onExploreClick: () => void;
@@ -85,6 +86,14 @@ export default function Hero({ onExploreClick, onJoinClick, onLoginClick }: Hero
         >
           <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 text-glow">U</span>nion for <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 text-glow">S</span>incere &amp; <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 text-glow">R</span>ejuvenated <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 text-glow">A</span>ctivies
         </motion.p>
+
+        {/* Live Visitor Counter Community Metric */}
+        <motion.div 
+          variants={staggerItemVariants}
+          className="mb-12 flex justify-center"
+        >
+          <VisitorCounter />
+        </motion.div>
 
         {/* Apple-style CTAs (Liquid Glass Buttons) */}
         <motion.div

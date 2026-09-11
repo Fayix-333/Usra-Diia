@@ -1,6 +1,7 @@
 import { MouseEvent } from 'react';
 import { motion } from 'motion/react';
 import { ArrowUp, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react';
+import VisitorCounter from './VisitorCounter';
 
 interface FooterProps {
   onNavClick?: (section: string) => void;
@@ -53,6 +54,9 @@ export default function Footer({ onNavClick }: FooterProps) {
             <p className="text-neutral-400 text-xs leading-relaxed max-w-sm">
               The official media and creative cohort of the student union. Blending cutting-edge visual technologies, journalism, and artistic film direction to record outstanding campus milestones.
             </p>
+            <div className="pt-2">
+              <VisitorCounter />
+            </div>
           </div>
 
           {/* Quick Sitemap Directory */}
